@@ -17,6 +17,8 @@ import subprocess
 import asyncio
 import tarfile
 import urllib.request
+import signal
+import time
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
