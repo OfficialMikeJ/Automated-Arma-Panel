@@ -310,13 +310,107 @@ async def start_server(
     if not server:
         raise HTTPException(status_code=404, detail="Server not found")
     
-    # Simulate server start (in real implementation, you would start the actual server process)
-    await db.servers.update_one(
-        {"id": server_id},
-        {"$set": {"status": "online", "current_players": 0}}
+    # Create logs directory if it doesn't exist
+    logs_dir = Path("/tmp/arma_servers") / server_id / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Start a dummy process (simulating server)
+    # In production, this would be: ./ArmaReforgerServer or similar
+    log_file = logs_dir / "server.log"
+    process = subprocess.Popen(
+        ["bash", "-c", f"while true; do echo '[$(date)] Server running on port {server['port']}...'; sleep 5; done"],
+        stdout=open(log_file, "a"),
+        stderr=subprocess.STDOUT,
+        preexec_fn=os.setsid
     )
     
-    return {"message": "Server started successfully", "status": "online"}
+    # Update server with PID
+    await db.servers.update_one(
+        {"id": server_id},
+        {"$set": {"status": "online", "current_players": 0, "pid": process.pid}}
+    )
+    
+    return {"message": "Server started successfully", "status": "online", "pid": process.pid}
+
+@api_router.post("/servers/{server_id}/stop")
+async def stop_server(
+    server_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    # Kill the process if it exists
+    if server.get("pid"):
+        try:
+            # Kill the process group to ensure all child processes are killed
+            os.killpg(os.getpgid(server["pid"]), signal.SIGTERM)
+        except ProcessLookupError:
+            pass  # Process already dead
+        except Exception as e:
+            logger.warning(f"Error killing process {server['pid']}: {e}")
+    
+    await db.servers.update_one(
+        {"id": server_id},
+        {"$set": {"status": "offline", "current_players": 0, "pid": None}}
+    )
+    
+    return {"message": "Server stopped successfully", "status": "offline"}
+
+@api_router.post("/servers/{server_id}/restart")
+async def restart_server(
+    server_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    # Set restarting status
+    await db.servers.update_one(
+        {"id": server_id},
+        {"$set": {"status": "restarting"}}
+    )
+    
+    # Stop the server
+    if server.get("pid"):
+        try:
+            os.killpg(os.getpgid(server["pid"]), signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except Exception as e:
+            logger.warning(f"Error killing process {server['pid']}: {e}")
+    
+    # Wait a bit
+    await asyncio.sleep(2)
+    
+    # Start the server
+    logs_dir = Path("/tmp/arma_servers") / server_id / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_file = logs_dir / "server.log"
+    
+    process = subprocess.Popen(
+        ["bash", "-c", f"while true; do echo '[$(date)] Server running on port {server['port']}...'; sleep 5; done"],
+        stdout=open(log_file, "a"),
+        stderr=subprocess.STDOUT,
+        preexec_fn=os.setsid
+    )
+    
+    await db.servers.update_one(
+        {"id": server_id},
+        {"$set": {"status": "online", "current_players": 0, "pid": process.pid}}
+    )
+    
+    return {"message": "Server restarted successfully", "status": "online", "pid": process.pid}
 
 @api_router.post("/servers/{server_id}/stop")
 async def stop_server(
