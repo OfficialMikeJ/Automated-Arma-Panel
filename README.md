@@ -220,6 +220,49 @@ Edit `docker-compose.yml` to customize:
 - Backend API: `http://localhost:8001`
 - MongoDB: `localhost:27017`
 
+**Docker Architecture:**
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Frontend      │────▶│    Backend      │────▶│    MongoDB      │
+│  (nginx:80)     │     │  (uvicorn:8001) │     │  (mongo:27017)  │
+│  React Build    │     │   FastAPI       │     │   Database      │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+**Volume Management:**
+```bash
+# List volumes
+docker volume ls
+
+# Inspect volume
+docker volume inspect tactical-command-panel_mongodb_data
+
+# Backup volume
+docker run --rm -v tactical-command-panel_mongodb_data:/data -v $(pwd):/backup ubuntu tar czf /backup/mongodb-backup.tar.gz /data
+
+# Remove volumes (⚠️ deletes all data!)
+docker-compose down -v
+```
+
+**Troubleshooting Docker:**
+```bash
+# View container logs
+docker logs tactical-backend
+docker logs tactical-frontend
+docker logs tactical-mongodb
+
+# Enter container shell
+docker exec -it tactical-backend bash
+docker exec -it tactical-mongodb mongosh
+
+# Check container health
+docker ps
+docker inspect tactical-backend
+
+# Rebuild specific service
+docker-compose up -d --build backend
+```
+
 ### Option 2: Systemd Services (Linux Production)
 
 For native Linux deployment with automatic startup on boot.
