@@ -51,8 +51,8 @@ export default function SystemResources({ resources }) {
               CPU
             </h3>
           </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height={192}>
               <PieChart>
                 <Pie
                   data={cpuData}
