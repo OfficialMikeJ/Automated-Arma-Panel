@@ -412,56 +412,6 @@ async def restart_server(
     
     return {"message": "Server restarted successfully", "status": "online", "pid": process.pid}
 
-@api_router.post("/servers/{server_id}/stop")
-async def stop_server(
-    server_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    server = await db.servers.find_one(
-        {"id": server_id, "user_id": current_user["user_id"]},
-        {"_id": 0}
-    )
-    
-    if not server:
-        raise HTTPException(status_code=404, detail="Server not found")
-    
-    # Simulate server stop
-    await db.servers.update_one(
-        {"id": server_id},
-        {"$set": {"status": "offline", "current_players": 0}}
-    )
-    
-    return {"message": "Server stopped successfully", "status": "offline"}
-
-@api_router.post("/servers/{server_id}/restart")
-async def restart_server(
-    server_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    server = await db.servers.find_one(
-        {"id": server_id, "user_id": current_user["user_id"]},
-        {"_id": 0}
-    )
-    
-    if not server:
-        raise HTTPException(status_code=404, detail="Server not found")
-    
-    # Simulate server restart
-    await db.servers.update_one(
-        {"id": server_id},
-        {"$set": {"status": "restarting"}}
-    )
-    
-    # Simulate restart delay
-    await asyncio.sleep(2)
-    
-    await db.servers.update_one(
-        {"id": server_id},
-        {"$set": {"status": "online", "current_players": 0}}
-    )
-    
-    return {"message": "Server restarted successfully", "status": "online"}
-
 # System resources
 @api_router.get("/system/resources", response_model=SystemResources)
 async def get_system_resources(current_user: dict = Depends(get_current_user)):
@@ -478,6 +428,209 @@ async def get_system_resources(current_user: dict = Depends(get_current_user)):
         disk_used_gb=round(disk.used / (1024**3), 2),
         disk_total_gb=round(disk.total / (1024**3), 2)
     )
+
+# Server configuration management
+@api_router.get("/servers/{server_id}/config", response_model=ServerConfig)
+async def get_server_config(
+    server_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    # Create config directory if it doesn't exist
+    config_dir = Path("/tmp/arma_servers") / server_id
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "server.cfg"
+    
+    # Create default config if doesn't exist
+    if not config_file.exists():
+        default_config = f"""// Server Configuration for {server['name']}
+hostname = "{server['name']}";
+password = "";
+passwordAdmin = "admin123";
+maxPlayers = {server['max_players']};
+motd[] = {{"Welcome to {server['name']}", "Tactical Operations"}};
+voteThreshold = 0.33;
+voteMissionPlayers = 1;
+
+// Network Settings
+serverPort = {server['port']};
+serverCommandPassword = "tactical123";
+
+// Gameplay Settings
+disableVoN = 0;
+persistent = 1;
+autoSelectMission = true;
+
+// Performance
+maxPing = 200;
+maxDesync = 150;
+maxPacketLoss = 50;
+"""
+        config_file.write_text(default_config)
+    
+    content = config_file.read_text()
+    return ServerConfig(content=content)
+
+@api_router.put("/servers/{server_id}/config")
+async def update_server_config(
+    server_id: str,
+    config: ServerConfig,
+    current_user: dict = Depends(get_current_user)
+):
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    config_dir = Path("/tmp/arma_servers") / server_id
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "server.cfg"
+    
+    config_file.write_text(config.content)
+    
+    return {"message": "Configuration updated successfully"}
+
+# Mod management
+@api_router.get("/servers/{server_id}/mods", response_model=List[ServerMod])
+async def get_server_mods(
+    server_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify server exists
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    mods = await db.mods.find({"server_id": server_id}, {"_id": 0}).to_list(1000)
+    
+    for mod in mods:
+        if isinstance(mod['created_at'], str):
+            mod['created_at'] = datetime.fromisoformat(mod['created_at'])
+    
+    return mods
+
+@api_router.post("/servers/{server_id}/mods", response_model=ServerMod)
+async def add_server_mod(
+    server_id: str,
+    mod_data: ServerModCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify server exists
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    mod = ServerMod(
+        **mod_data.model_dump(),
+        server_id=server_id
+    )
+    
+    doc = mod.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.mods.insert_one(doc)
+    
+    return mod
+
+@api_router.delete("/servers/{server_id}/mods/{mod_id}")
+async def delete_server_mod(
+    server_id: str,
+    mod_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify server exists
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    result = await db.mods.delete_one({"id": mod_id, "server_id": server_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Mod not found")
+    
+    return {"message": "Mod deleted successfully"}
+
+@api_router.patch("/servers/{server_id}/mods/{mod_id}/toggle")
+async def toggle_server_mod(
+    server_id: str,
+    mod_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify server exists
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    # Get current mod state
+    mod = await db.mods.find_one({"id": mod_id, "server_id": server_id}, {"_id": 0})
+    
+    if not mod:
+        raise HTTPException(status_code=404, detail="Mod not found")
+    
+    # Toggle enabled state
+    new_state = not mod.get("enabled", True)
+    await db.mods.update_one(
+        {"id": mod_id},
+        {"$set": {"enabled": new_state}}
+    )
+    
+    return {"message": "Mod toggled successfully", "enabled": new_state}
+
+# Log viewer
+@api_router.get("/servers/{server_id}/logs", response_model=ServerLogs)
+async def get_server_logs(
+    server_id: str,
+    lines: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    server = await db.servers.find_one(
+        {"id": server_id, "user_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not server:
+        raise HTTPException(status_code=404, detail="Server not found")
+    
+    log_file = Path("/tmp/arma_servers") / server_id / "logs" / "server.log"
+    
+    if not log_file.exists():
+        return ServerLogs(logs="No logs available yet. Start the server to generate logs.", lines=0)
+    
+    # Read last N lines
+    try:
+        with open(log_file, 'r') as f:
+            all_lines = f.readlines()
+            last_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            logs_content = ''.join(last_lines)
+        
+        return ServerLogs(logs=logs_content, lines=len(last_lines))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading logs: {str(e)}")
 
 # SteamCMD management
 @api_router.get("/steamcmd/status", response_model=SteamCMDStatus)
