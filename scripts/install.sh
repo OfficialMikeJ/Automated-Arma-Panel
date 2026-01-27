@@ -1,0 +1,429 @@
+#!/bin/bash
+
+###############################################################################
+# Tactical Command - Arma Server Management Panel
+# Installation Script
+#
+# This script automates the installation and setup process for the panel.
+# It can run in automatic mode or guide you through manual configuration.
+#
+# Usage:
+#   ./install.sh --auto    # Automatic installation with defaults
+#   ./install.sh --manual  # Interactive installation
+#   ./install.sh --help    # Show help
+###############################################################################
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Installation mode
+INSTALL_MODE="manual"
+
+# Directories
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+BACKEND_DIR="$ROOT_DIR/backend"
+FRONTEND_DIR="$ROOT_DIR/frontend"
+SCRIPTS_DIR="$ROOT_DIR/scripts"
+
+# Log file
+LOG_FILE="$ROOT_DIR/install.log"
+
+###############################################################################
+# Helper Functions
+###############################################################################
+
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"
+}
+
+info() {
+    echo -e "${BLUE}[INFO]${NC} $1" | tee -a "$LOG_FILE"
+}
+
+print_header() {
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo -e "  ${GREEN}TACTICAL COMMAND - ARMA SERVER MANAGEMENT PANEL${NC}"
+    echo "  Installation Script"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+}
+
+check_root() {
+    if [ "$EUID" -eq 0 ]; then
+        warn "Running as root. This is not recommended for development."
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+}
+
+check_command() {
+    if command -v "$1" &> /dev/null; then
+        log "✓ $1 is installed"
+        return 0
+    else
+        error "✗ $1 is not installed"
+        return 1
+    fi
+}
+
+###############################################################################
+# System Requirements Check
+###############################################################################
+
+check_system_requirements() {
+    log "Checking system requirements..."
+    
+    local all_good=true
+    
+    # Check OS
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        log "✓ Running on Linux"
+    else
+        error "✗ This script is designed for Linux systems"
+        all_good=false
+    fi
+    
+    # Check Python
+    if check_command python3; then
+        PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
+        log "  Python version: $PYTHON_VERSION"
+    else
+        error "Python 3 is required but not installed"
+        all_good=false
+    fi
+    
+    # Check Node.js
+    if check_command node; then
+        NODE_VERSION=$(node --version)
+        log "  Node.js version: $NODE_VERSION"
+    else
+        error "Node.js is required but not installed"
+        all_good=false
+    fi
+    
+    # Check Yarn
+    if check_command yarn; then
+        YARN_VERSION=$(yarn --version)
+        log "  Yarn version: $YARN_VERSION"
+    else
+        warn "Yarn is not installed. Will attempt to install..."
+    fi
+    
+    # Check MongoDB
+    if check_command mongod; then
+        log "✓ MongoDB is installed"
+    else
+        warn "MongoDB is not installed. Will attempt to install..."
+    fi
+    
+    if [ "$all_good" = false ]; then
+        error "Please install missing dependencies and try again."
+        exit 1
+    fi
+    
+    log "System requirements check passed!"
+}
+
+###############################################################################
+# Install Dependencies
+###############################################################################
+
+install_yarn() {
+    if ! command -v yarn &> /dev/null; then
+        log "Installing Yarn..."
+        npm install -g yarn || {
+            error "Failed to install Yarn"
+            exit 1
+        }
+        log "✓ Yarn installed successfully"
+    fi
+}
+
+install_mongodb() {
+    if ! command -v mongod &> /dev/null; then
+        log "Installing MongoDB..."
+        
+        # Detect distribution
+        if [ -f /etc/debian_version ]; then
+            # Debian/Ubuntu
+            sudo apt-get update
+            sudo apt-get install -y mongodb-org || sudo apt-get install -y mongodb
+        elif [ -f /etc/redhat-release ]; then
+            # RedHat/CentOS
+            sudo yum install -y mongodb-org
+        else
+            warn "Could not detect distribution. Please install MongoDB manually."
+            return 1
+        fi
+        
+        # Start MongoDB
+        sudo systemctl start mongod || sudo systemctl start mongodb
+        sudo systemctl enable mongod || sudo systemctl enable mongodb
+        
+        log "✓ MongoDB installed and started"
+    fi
+}
+
+setup_backend() {
+    log "Setting up backend..."
+    
+    cd "$BACKEND_DIR"
+    
+    # Check if virtual environment exists
+    if [ ! -d "venv" ]; then
+        log "Creating Python virtual environment..."
+        python3 -m venv venv
+    fi
+    
+    # Activate virtual environment
+    source venv/bin/activate
+    
+    # Upgrade pip
+    log "Upgrading pip..."
+    pip install --upgrade pip
+    
+    # Install dependencies
+    log "Installing Python dependencies..."
+    pip install -r requirements.txt
+    
+    log "✓ Backend setup complete"
+}
+
+setup_frontend() {
+    log "Setting up frontend..."
+    
+    cd "$FRONTEND_DIR"
+    
+    # Install dependencies
+    log "Installing Node.js dependencies..."
+    yarn install
+    
+    log "✓ Frontend setup complete"
+}
+
+###############################################################################
+# Configuration
+###############################################################################
+
+setup_backend_env() {
+    log "Configuring backend environment..."
+    
+    local env_file="$BACKEND_DIR/.env"
+    
+    if [ -f "$env_file" ] && [ "$INSTALL_MODE" = "manual" ]; then
+        read -p ".env file already exists. Overwrite? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log "Keeping existing .env file"
+            return
+        fi
+    fi
+    
+    # Generate random secret key
+    SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+    
+    cat > "$env_file" << EOF
+# MongoDB Configuration
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=arma_server_panel
+
+# Security
+SECRET_KEY=$SECRET_KEY
+
+# CORS
+CORS_ORIGINS=*
+EOF
+    
+    log "✓ Backend .env configured"
+}
+
+setup_frontend_env() {
+    log "Configuring frontend environment..."
+    
+    local env_file="$FRONTEND_DIR/.env"
+    
+    if [ -f "$env_file" ] && [ "$INSTALL_MODE" = "manual" ]; then
+        read -p ".env file already exists. Overwrite? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log "Keeping existing .env file"
+            return
+        fi
+    fi
+    
+    # Get backend URL
+    if [ "$INSTALL_MODE" = "manual" ]; then
+        read -p "Enter backend URL [http://localhost:8001]: " BACKEND_URL
+        BACKEND_URL=${BACKEND_URL:-http://localhost:8001}
+    else
+        BACKEND_URL="http://localhost:8001"
+    fi
+    
+    cat > "$env_file" << EOF
+REACT_APP_BACKEND_URL=$BACKEND_URL
+WDS_SOCKET_PORT=0
+ENABLE_HEALTH_CHECK=false
+EOF
+    
+    log "✓ Frontend .env configured"
+}
+
+create_directories() {
+    log "Creating necessary directories..."
+    
+    mkdir -p /tmp/arma_servers
+    mkdir -p "$ROOT_DIR/logs"
+    
+    log "✓ Directories created"
+}
+
+###############################################################################
+# Post-Installation
+###############################################################################
+
+print_summary() {
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo -e "  ${GREEN}Installation Complete!${NC}"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Next steps:"
+    echo ""
+    echo "1. Start MongoDB (if not running):"
+    echo "   sudo systemctl start mongod"
+    echo ""
+    echo "2. Start the backend:"
+    echo "   cd $BACKEND_DIR"
+    echo "   source venv/bin/activate"
+    echo "   uvicorn server:app --host 0.0.0.0 --port 8001 --reload"
+    echo ""
+    echo "3. Start the frontend (in a new terminal):"
+    echo "   cd $FRONTEND_DIR"
+    echo "   yarn start"
+    echo ""
+    echo "4. Access the panel:"
+    echo "   http://localhost:3000"
+    echo ""
+    echo "5. Create your admin account and start managing servers!"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+    echo "For more information, see README.md"
+    echo "Installation log saved to: $LOG_FILE"
+    echo ""
+}
+
+###############################################################################
+# Main Installation Flow
+###############################################################################
+
+show_help() {
+    cat << EOF
+Tactical Command - Installation Script
+
+Usage: $0 [OPTIONS]
+
+Options:
+    --auto      Automatic installation with default settings
+    --manual    Interactive installation (default)
+    --help      Show this help message
+
+Examples:
+    $0 --auto           # Quick automatic installation
+    $0 --manual         # Step-by-step installation
+    $0                  # Same as --manual
+
+EOF
+}
+
+main() {
+    # Parse arguments
+    case "${1:-}" in
+        --auto)
+            INSTALL_MODE="auto"
+            ;;
+        --manual)
+            INSTALL_MODE="manual"
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        "")
+            INSTALL_MODE="manual"
+            ;;
+        *)
+            error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+    
+    # Start installation
+    print_header
+    log "Starting installation in $INSTALL_MODE mode..."
+    log "Installation directory: $ROOT_DIR"
+    
+    # Check if running as root
+    check_root
+    
+    # System requirements
+    check_system_requirements
+    
+    # Install missing dependencies
+    if [ "$INSTALL_MODE" = "auto" ]; then
+        install_yarn
+        install_mongodb
+    else
+        read -p "Install Yarn if missing? (Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            install_yarn
+        fi
+        
+        read -p "Install MongoDB if missing? (Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            install_mongodb
+        fi
+    fi
+    
+    # Setup backend
+    setup_backend
+    
+    # Setup frontend
+    setup_frontend
+    
+    # Configure environments
+    setup_backend_env
+    setup_frontend_env
+    
+    # Create directories
+    create_directories
+    
+    # Print summary
+    print_summary
+    
+    log "Installation completed successfully!"
+}
+
+# Run main function
+main "$@"
