@@ -250,6 +250,18 @@ export default function DashboardPage({ onLogout }) {
                   server={server}
                   onAction={handleServerAction}
                   onDelete={handleDeleteServer}
+                  onOpenConfig={(serverId) => {
+                    setSelectedServerId(serverId);
+                    setShowConfigModal(true);
+                  }}
+                  onOpenMods={(serverId) => {
+                    setSelectedServerId(serverId);
+                    setShowModsModal(true);
+                  }}
+                  onOpenLogs={(serverId) => {
+                    setSelectedServerId(serverId);
+                    setShowLogsModal(true);
+                  }}
                 />
               ))}
             </div>
@@ -266,6 +278,33 @@ export default function DashboardPage({ onLogout }) {
       )}
       {showSteamCMDModal && (
         <SteamCMDModal onClose={() => setShowSteamCMDModal(false)} />
+      )}
+      {showConfigModal && selectedServerId && (
+        <ConfigEditorModal
+          serverId={selectedServerId}
+          onClose={() => {
+            setShowConfigModal(false);
+            setSelectedServerId(null);
+          }}
+        />
+      )}
+      {showModsModal && selectedServerId && (
+        <ModManagerModal
+          serverId={selectedServerId}
+          onClose={() => {
+            setShowModsModal(false);
+            setSelectedServerId(null);
+          }}
+        />
+      )}
+      {showLogsModal && selectedServerId && (
+        <LogViewerModal
+          serverId={selectedServerId}
+          onClose={() => {
+            setShowLogsModal(false);
+            setSelectedServerId(null);
+          }}
+        />
       )}
     </div>
   );
