@@ -88,36 +88,69 @@ export default function ServerCard({ server, onAction, onDelete, onOpenConfig, o
         </div>
 
         {/* Control Buttons */}
-        <div className="flex gap-2">
-          {server.status === "offline" ? (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            {server.status === "offline" ? (
+              <button
+                data-testid={`start-server-button-${server.id}`}
+                onClick={() => onAction(server.id, "start")}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-secondary uppercase tracking-wider rounded-sm shadow-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm"
+              >
+                <Play size={14} />
+                <span>Start</span>
+              </button>
+            ) : (
+              <button
+                data-testid={`stop-server-button-${server.id}`}
+                onClick={() => onAction(server.id, "stop")}
+                disabled={server.status === "restarting"}
+                className="flex-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/50 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Square size={14} />
+                <span>Stop</span>
+              </button>
+            )}
             <button
-              data-testid={`start-server-button-${server.id}`}
-              onClick={() => onAction(server.id, "start")}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-secondary uppercase tracking-wider rounded-sm shadow-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm"
-            >
-              <Play size={14} />
-              <span>Start</span>
-            </button>
-          ) : (
-            <button
-              data-testid={`stop-server-button-${server.id}`}
-              onClick={() => onAction(server.id, "stop")}
+              data-testid={`restart-server-button-${server.id}`}
+              onClick={() => onAction(server.id, "restart")}
               disabled={server.status === "restarting"}
-              className="flex-1 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/50 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-accent/10 hover:bg-accent/20 text-accent border border-accent/50 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Square size={14} />
-              <span>Stop</span>
+              <RotateCw size={14} />
+              <span>Restart</span>
             </button>
-          )}
-          <button
-            data-testid={`restart-server-button-${server.id}`}
-            onClick={() => onAction(server.id, "restart")}
-            disabled={server.status === "restarting"}
-            className="flex-1 bg-accent/10 hover:bg-accent/20 text-accent border border-accent/50 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RotateCw size={14} />
-            <span>Restart</span>
-          </button>
+          </div>
+          
+          {/* Additional Actions */}
+          <div className="flex gap-2">
+            <button
+              data-testid={`config-button-${server.id}`}
+              onClick={() => onOpenConfig(server.id)}
+              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              aria-label="Server configuration"
+            >
+              <Settings size={14} />
+              <span>Config</span>
+            </button>
+            <button
+              data-testid={`mods-button-${server.id}`}
+              onClick={() => onOpenMods(server.id)}
+              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              aria-label="Manage mods"
+            >
+              <Package size={14} />
+              <span>Mods</span>
+            </button>
+            <button
+              data-testid={`logs-button-${server.id}`}
+              onClick={() => onOpenLogs(server.id)}
+              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              aria-label="View logs"
+            >
+              <FileText size={14} />
+              <span>Logs</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
