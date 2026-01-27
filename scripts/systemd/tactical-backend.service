@@ -1,0 +1,39 @@
+[Unit]
+Description=Tactical Command Backend Service
+After=network.target mongod.service
+Wants=mongod.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/app/backend
+
+# Environment file
+EnvironmentFile=/app/backend/.env
+
+# Virtual environment activation and start
+ExecStart=/app/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-backend
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/tmp/arma_servers /app/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

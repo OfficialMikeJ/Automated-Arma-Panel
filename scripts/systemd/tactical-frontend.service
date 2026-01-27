@@ -1,0 +1,36 @@
+[Unit]
+Description=Tactical Command Frontend Service
+After=network.target tactical-backend.service
+Wants=tactical-backend.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/app/frontend
+
+# Environment
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+
+# Start command
+ExecStart=/usr/bin/yarn start
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-frontend
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
