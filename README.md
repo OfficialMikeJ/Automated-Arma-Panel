@@ -182,9 +182,159 @@ yarn start
 
 Access the application at `http://localhost:3000`
 
-### Production Mode
+## Deployment Options
 
-For production deployment, use the provided supervisor configuration or systemd services.
+### Option 1: Docker Compose (Recommended for Production)
+
+The easiest way to deploy in production with full isolation and easy management.
+
+**Quick Start:**
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
+```
+
+**Services Included:**
+- MongoDB (persistent data with volumes)
+- Backend API (auto-restart, health checks)
+- Frontend (nginx, optimized build)
+
+**Configuration:**
+Edit `docker-compose.yml` to customize:
+- Ports
+- Environment variables
+- Volume mounts
+- Resource limits
+
+**Access:**
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8001`
+- MongoDB: `localhost:27017`
+
+### Option 2: Systemd Services (Linux Production)
+
+For native Linux deployment with automatic startup on boot.
+
+**Setup:**
+```bash
+# Run as root
+cd /app/scripts
+sudo ./setup-systemd.sh
+```
+
+This will:
+- Create www-data user
+- Set proper permissions
+- Install systemd services
+- Enable auto-start on boot
+- Start services immediately
+
+**Service Management:**
+```bash
+# Status
+sudo systemctl status tactical-backend
+sudo systemctl status tactical-frontend
+
+# Start/Stop
+sudo systemctl start tactical-backend
+sudo systemctl stop tactical-frontend
+
+# Restart
+sudo systemctl restart tactical-backend
+
+# View logs
+sudo journalctl -u tactical-backend -f
+sudo journalctl -u tactical-frontend -f
+
+# Disable auto-start
+sudo systemctl disable tactical-backend
+```
+
+**Service Files:**
+- Backend: `/etc/systemd/system/tactical-backend.service`
+- Frontend: `/etc/systemd/system/tactical-frontend.service`
+
+### Option 3: Manual Supervisor (Current Setup)
+
+If already using supervisor:
+
+```bash
+sudo supervisorctl restart backend frontend
+sudo supervisorctl status
+```
+
+## Backup and Restore
+
+### Creating Backups
+
+**Automatic backup with timestamp:**
+```bash
+cd /app/scripts
+./backup.sh
+```
+
+**Named backup:**
+```bash
+./backup.sh my-important-backup
+```
+
+**What's backed up:**
+- MongoDB database (all collections)
+- Server configurations
+- Server logs (last 7 days)
+- Environment files (.env)
+
+**Backup location:** `/app/backups/`
+
+**Automatic cleanup:** Keeps last 10 backups
+
+### Restoring Backups
+
+**List available backups:**
+```bash
+cd /app/scripts
+./restore.sh
+```
+
+**Restore specific backup:**
+```bash
+./restore.sh backup_20240127_153045
+```
+
+**What happens during restore:**
+1. Services are stopped
+2. Database is dropped and restored
+3. Configurations are restored
+4. Logs are restored
+5. Environment files are restored
+6. Services are restarted
+
+**⚠️ Warning:** Restore will overwrite existing data!
+
+### Scheduled Backups
+
+**Create daily backup with cron:**
+```bash
+# Edit crontab
+crontab -e
+
+# Add daily backup at 2 AM
+0 2 * * * /app/scripts/backup.sh >> /app/logs/backup.log 2>&1
+```
+
+**Weekly backup:**
+```bash
+0 2 * * 0 /app/scripts/backup.sh weekly-backup >> /app/logs/backup.log 2>&1
+```
 
 ## Usage Guide
 
