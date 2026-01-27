@@ -111,7 +111,7 @@ export default function ServerCard({ server, onAction, onDelete }) {
           <button
             data-testid={`restart-server-button-${server.id}`}
             onClick={() => onAction(server.id, "restart")}
-            disabled={server.status === "offline" || server.status === "restarting"}
+            disabled={server.status === "restarting"}
             className="flex-1 bg-accent/10 hover:bg-accent/20 text-accent border border-accent/50 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCw size={14} />
