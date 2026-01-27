@@ -6,6 +6,9 @@ import ServerCard from "../components/ServerCard";
 import SystemResources from "../components/SystemResources";
 import AddServerModal from "../components/AddServerModal";
 import SteamCMDModal from "../components/SteamCMDModal";
+import ConfigEditorModal from "../components/ConfigEditorModal";
+import ModManagerModal from "../components/ModManagerModal";
+import LogViewerModal from "../components/LogViewerModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -16,6 +19,10 @@ export default function DashboardPage({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSteamCMDModal, setShowSteamCMDModal] = useState(false);
+  const [selectedServerId, setSelectedServerId] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showModsModal, setShowModsModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
   const username = localStorage.getItem("username");
 
   const getAuthHeader = () => ({
