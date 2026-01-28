@@ -1,0 +1,392 @@
+#!/bin/bash
+
+# Installation functions for Tactical Command panel
+# This file is sourced by install.sh
+
+###############################################################################
+# Native Installation (Option 2)
+###############################################################################
+
+install_native_panel() {
+    print_header
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${MAGENTA}  OPTION 2: Native Installation + Guided Setup${NC}"
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    detect_installations
+    
+    if [ "$PANEL_INSTALLED" = true ]; then
+        warn "Panel components already detected!"
+        echo ""
+        read -p "Do you want to reinstall? (y/N): " -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            info "Skipping native installation"
+            pause
+            return 0
+        fi
+    fi
+    
+    # Check system requirements
+    log "Step 1: Checking system requirements..."
+    echo ""
+    
+    local all_good=true
+    
+    # Check Python
+    if check_command python3; then
+        PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
+        success "✓ Python: $PYTHON_VERSION"
+    else
+        error "✗ Python 3 is required but not installed"
+        all_good=false
+    fi
+    
+    # Check Node.js
+    if check_command node; then
+        NODE_VERSION=$(node --version)
+        success "✓ Node.js: $NODE_VERSION"
+    else
+        error "✗ Node.js is required but not installed"
+        all_good=false
+    fi
+    
+    if [ "$all_good" = false ]; then
+        error "Missing dependencies. Please install Python 3.11+ and Node.js 16+ first."
+        pause
+        return 1
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    # Install Yarn if needed
+    if ! check_command yarn; then
+        info "Installing Yarn..."
+        npm install -g yarn || {
+            error "Failed to install Yarn"
+            pause
+            return 1
+        }
+        success "✓ Yarn installed"
+        echo ""
+    else
+        success "✓ Yarn already installed"
+        echo ""
+    fi
+    
+    # Install MongoDB if needed
+    if [ "$MONGODB_INSTALLED" = false ]; then
+        log "Step 2: Installing MongoDB..."
+        echo ""
+        
+        read -p "Install MongoDB locally? (Y/n): " -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            if [ -f /etc/debian_version ]; then
+                info "Installing MongoDB on Debian/Ubuntu..."
+                wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+                echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+                sudo apt-get update
+                sudo apt-get install -y mongodb-org || sudo apt-get install -y mongodb
+                
+                sudo systemctl start mongod || sudo systemctl start mongodb
+                sudo systemctl enable mongod || sudo systemctl enable mongodb
+                
+                success "✓ MongoDB installed and started"
+            else
+                warn "Please install MongoDB manually for your distribution"
+            fi
+        else
+            info "Skipping MongoDB installation - make sure it's available!"
+        fi
+        echo ""
+    else
+        success "✓ MongoDB already installed"
+        echo ""
+    fi
+    
+    print_separator
+    echo ""
+    
+    # Backend setup
+    log "Step 3: Setting up backend..."
+    echo ""
+    
+    cd "$BACKEND_DIR"
+    
+    if [ ! -d "venv" ]; then
+        info "Creating Python virtual environment..."
+        python3 -m venv venv
+    fi
+    
+    source venv/bin/activate
+    
+    info "Installing Python dependencies..."
+    pip install --quiet --upgrade pip
+    pip install --quiet -r requirements.txt
+    
+    success "✓ Backend setup complete"
+    echo ""
+    
+    print_separator
+    echo ""
+    
+    # Frontend setup
+    log "Step 4: Setting up frontend..."
+    echo ""
+    
+    cd "$FRONTEND_DIR"
+    
+    info "Installing Node.js dependencies..."
+    yarn install --silent
+    
+    success "✓ Frontend setup complete"
+    echo ""
+    
+    print_separator
+    echo ""
+    
+    # Guided configuration
+    guided_configuration
+    
+    PANEL_INSTALLED=true
+    
+    echo ""
+    success "Native installation complete!"
+    echo ""
+    
+    pause
+}
+
+###############################################################################
+# Guided Configuration
+###############################################################################
+
+guided_configuration() {
+    log "Step 5: Configuration Setup"
+    echo ""
+    
+    # Backend configuration
+    info "Configuring backend..."
+    echo ""
+    
+    local env_file="$BACKEND_DIR/.env"
+    
+    if [ -f "$env_file" ]; then
+        warn ".env file already exists"
+        read -p "Overwrite existing configuration? (y/N): " -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            info "Keeping existing configuration"
+            return
+        fi
+    fi
+    
+    # MongoDB URL
+    read -p "MongoDB URL [mongodb://localhost:27017]: " MONGO_URL
+    MONGO_URL=${MONGO_URL:-mongodb://localhost:27017}
+    
+    # Database name
+    read -p "Database name [arma_server_panel]: " DB_NAME
+    DB_NAME=${DB_NAME:-arma_server_panel}
+    
+    # Generate secret key
+    SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+    
+    # Write backend .env
+    cat > "$env_file" << EOF
+# MongoDB Configuration
+MONGO_URL=$MONGO_URL
+DB_NAME=$DB_NAME
+
+# Security
+SECRET_KEY=$SECRET_KEY
+
+# CORS
+CORS_ORIGINS=*
+EOF
+    
+    success "✓ Backend configured"
+    echo ""
+    
+    # Frontend configuration
+    info "Configuring frontend..."
+    echo ""
+    
+    local frontend_env="$FRONTEND_DIR/.env"
+    
+    read -p "Backend URL [http://localhost:8001]: " BACKEND_URL
+    BACKEND_URL=${BACKEND_URL:-http://localhost:8001}
+    
+    cat > "$frontend_env" << EOF
+REACT_APP_BACKEND_URL=$BACKEND_URL
+WDS_SOCKET_PORT=0
+ENABLE_HEALTH_CHECK=false
+EOF
+    
+    success "✓ Frontend configured"
+    echo ""
+    
+    # Create directories
+    mkdir -p /tmp/arma_servers
+    mkdir -p "$ROOT_DIR/logs"
+    mkdir -p "$ROOT_DIR/backups"
+    
+    success "✓ Directories created"
+}
+
+###############################################################################
+# SSL/Let's Encrypt Installation (Option 3)
+###############################################################################
+
+install_ssl_certificates() {
+    print_header
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${MAGENTA}  OPTION 3: Install SSL Certificates (Let's Encrypt)${NC}"
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    warn "SSL Certificate Setup"
+    echo ""
+    info "Requirements:"
+    echo "  • Domain name pointing to this server"
+    echo "  • Ports 80 and 443 accessible from internet"
+    echo "  • Valid email address for Let's Encrypt"
+    echo ""
+    
+    read -p "Continue with SSL setup? (y/N): " -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        info "SSL setup cancelled"
+        pause
+        return 0
+    fi
+    
+    # Check if certbot is installed
+    if ! check_command certbot; then
+        info "Installing Certbot..."
+        echo ""
+        
+        if [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y certbot python3-certbot-nginx
+        else
+            error "Please install Certbot manually for your distribution"
+            pause
+            return 1
+        fi
+    else
+        success "✓ Certbot already installed"
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    # Get domain information
+    read -p "Enter your domain name (e.g., panel.yourdomain.com): " DOMAIN
+    
+    if [ -z "$DOMAIN" ]; then
+        error "Domain name is required"
+        pause
+        return 1
+    fi
+    
+    read -p "Enter your email address: " EMAIL
+    
+    if [ -z "$EMAIL" ]; then
+        error "Email address is required"
+        pause
+        return 1
+    fi
+    
+    echo ""
+    info "Domain: $DOMAIN"
+    info "Email: $EMAIL"
+    echo ""
+    
+    read -p "Is this correct? (y/N): " -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        info "SSL setup cancelled"
+        pause
+        return 0
+    fi
+    
+    # Check if nginx is installed
+    if ! check_command nginx; then
+        info "Installing nginx..."
+        sudo apt-get install -y nginx
+        sudo systemctl enable nginx
+        sudo systemctl start nginx
+    fi
+    
+    echo ""
+    log "Obtaining SSL certificate..."
+    echo ""
+    
+    # Create nginx config for domain
+    sudo tee /etc/nginx/sites-available/tactical-command > /dev/null << EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /api/ {
+        proxy_pass http://localhost:8001;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+}
+EOF
+    
+    # Enable site
+    sudo ln -sf /etc/nginx/sites-available/tactical-command /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl reload nginx
+    
+    echo ""
+    
+    # Obtain certificate
+    info "Requesting SSL certificate from Let's Encrypt..."
+    echo ""
+    
+    sudo certbot --nginx -d $DOMAIN --email $EMAIL --agree-tos --non-interactive --redirect
+    
+    if [ $? -eq 0 ]; then
+        success "✓ SSL certificate installed successfully!"
+        echo ""
+        info "Your panel is now accessible at: https://$DOMAIN"
+        echo ""
+        info "Certificate will auto-renew via certbot timer"
+        echo ""
+        
+        # Test auto-renewal
+        sudo certbot renew --dry-run
+        
+        success "✓ Auto-renewal test passed"
+    else
+        error "Failed to obtain SSL certificate"
+        echo ""
+        warn "Common issues:"
+        echo "  • Domain doesn't point to this server"
+        echo "  • Ports 80/443 blocked by firewall"
+        echo "  • DNS propagation not complete"
+    fi
+    
+    echo ""
+    pause
+}
