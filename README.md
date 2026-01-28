@@ -53,7 +53,7 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ### Option 1: Automatic Installation (Recommended)
 
-Run the automated installation script:
+Run the automated installation script for native deployment:
 
 ```bash
 cd /app/scripts
@@ -68,6 +68,53 @@ The script will:
 - Configure MongoDB
 - Create necessary directories
 - Set up environment files
+
+### Option 2: Docker Installation (Optional)
+
+If you prefer containerized deployment with Docker:
+
+**Prerequisites:**
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+**Deploy with Docker:**
+```bash
+cd /app
+
+# Configure environment (optional)
+# Edit docker-compose.yml if needed
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Access the panel
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8001
+```
+
+**Docker Benefits:**
+- Isolated environment
+- No dependency conflicts
+- Easy cleanup and removal
+- Consistent across systems
+- Production-ready configuration
+
+**Docker Services:**
+- MongoDB with persistent storage
+- Backend API with health checks
+- Frontend with optimized nginx build
+
+**Note:** Docker is completely optional. Choose Option 1 for native installation or Option 2 for containerized deployment.
 
 ### Option 2: Manual Installation
 
