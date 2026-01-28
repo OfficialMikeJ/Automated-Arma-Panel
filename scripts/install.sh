@@ -95,61 +95,150 @@ pause() {
 }
 
 ###############################################################################
-# System Requirements Check
+# System Detection
 ###############################################################################
 
-check_system_requirements() {
-    log "Checking system requirements..."
+detect_installations() {
+    info "Detecting existing installations..."
     
-    local all_good=true
-    
-    # Check OS
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        log "✓ Running on Linux"
+    # Check Docker
+    if check_command docker; then
+        DOCKER_VERSION=$(docker --version 2>/dev/null | cut -d ' ' -f3 | tr -d ',')
+        DOCKER_INSTALLED=true
+        success "✓ Docker detected: $DOCKER_VERSION"
     else
-        error "✗ This script is designed for Linux systems"
-        all_good=false
+        warn "✗ Docker not installed"
     fi
     
-    # Check Python
-    if check_command python3; then
-        PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
-        log "  Python version: $PYTHON_VERSION"
+    # Check Docker Compose
+    if check_command docker-compose; then
+        COMPOSE_VERSION=$(docker-compose --version 2>/dev/null | cut -d ' ' -f3 | tr -d ',')
+        DOCKER_COMPOSE_INSTALLED=true
+        success "✓ Docker Compose detected: $COMPOSE_VERSION"
     else
-        error "Python 3 is required but not installed"
-        all_good=false
-    fi
-    
-    # Check Node.js
-    if check_command node; then
-        NODE_VERSION=$(node --version)
-        log "  Node.js version: $NODE_VERSION"
-    else
-        error "Node.js is required but not installed"
-        all_good=false
-    fi
-    
-    # Check Yarn
-    if check_command yarn; then
-        YARN_VERSION=$(yarn --version)
-        log "  Yarn version: $YARN_VERSION"
-    else
-        warn "Yarn is not installed. Will attempt to install..."
+        warn "✗ Docker Compose not installed"
     fi
     
     # Check MongoDB
     if check_command mongod; then
-        log "✓ MongoDB is installed"
+        MONGODB_INSTALLED=true
+        success "✓ MongoDB detected"
     else
-        warn "MongoDB is not installed. Will attempt to install..."
+        warn "✗ MongoDB not installed"
     fi
     
-    if [ "$all_good" = false ]; then
-        error "Please install missing dependencies and try again."
-        exit 1
+    # Check if panel is installed
+    if [ -f "$BACKEND_DIR/venv/bin/activate" ] && [ -d "$FRONTEND_DIR/node_modules" ]; then
+        PANEL_INSTALLED=true
+        success "✓ Panel components detected"
+    else
+        warn "✗ Panel not fully installed"
     fi
     
-    log "System requirements check passed!"
+    echo ""
+}
+
+###############################################################################
+# Docker Installation (Option 1)
+###############################################################################
+
+install_docker_and_compose() {
+    print_header
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${MAGENTA}  OPTION 1: Install Docker & Docker Compose${NC}"
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    detect_installations
+    
+    if [ "$DOCKER_INSTALLED" = true ] && [ "$DOCKER_COMPOSE_INSTALLED" = true ]; then
+        success "Docker and Docker Compose are already installed!"
+        echo ""
+        info "Current versions:"
+        echo "  • Docker: $DOCKER_VERSION"
+        echo "  • Docker Compose: $COMPOSE_VERSION"
+        echo ""
+        read -p "Do you want to reinstall/update? (y/N): " -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            info "Skipping Docker installation"
+            pause
+            return 0
+        fi
+    fi
+    
+    log "Starting Docker installation..."
+    echo ""
+    
+    # Install Docker
+    if [ "$DOCKER_INSTALLED" = false ]; then
+        info "Installing Docker..."
+        echo ""
+        
+        # Download and run Docker install script
+        curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+        
+        if [ $? -eq 0 ]; then
+            sudo sh /tmp/get-docker.sh
+            rm /tmp/get-docker.sh
+            
+            # Add current user to docker group
+            sudo usermod -aG docker $USER
+            
+            success "✓ Docker installed successfully"
+            DOCKER_INSTALLED=true
+        else
+            error "Failed to download Docker installation script"
+            pause
+            return 1
+        fi
+    else
+        info "Docker already installed, skipping..."
+    fi
+    
+    echo ""
+    
+    # Install Docker Compose
+    if [ "$DOCKER_COMPOSE_INSTALLED" = false ]; then
+        info "Installing Docker Compose..."
+        echo ""
+        
+        # Get latest version
+        COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d'"' -f4)
+        
+        # Download Docker Compose
+        sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        
+        # Make executable
+        sudo chmod +x /usr/local/bin/docker-compose
+        
+        # Verify installation
+        if docker-compose --version &> /dev/null; then
+            success "✓ Docker Compose installed successfully"
+            DOCKER_COMPOSE_INSTALLED=true
+        else
+            error "Failed to install Docker Compose"
+            pause
+            return 1
+        fi
+    else
+        info "Docker Compose already installed, skipping..."
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    success "Docker installation complete!"
+    echo ""
+    info "Important: You may need to log out and back in for group permissions to take effect"
+    echo ""
+    info "Test Docker installation with:"
+    echo "  ${CYAN}docker --version${NC}"
+    echo "  ${CYAN}docker-compose --version${NC}"
+    echo "  ${CYAN}docker run hello-world${NC}"
+    echo ""
+    
+    pause
 }
 
 ###############################################################################
