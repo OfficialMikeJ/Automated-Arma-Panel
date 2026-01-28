@@ -41,6 +41,7 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ## System Requirements
 
+### For Native Installation
 - **OS**: Linux (Ubuntu 20.04+ recommended)
 - **Python**: 3.11 or higher
 - **Node.js**: 16.x or higher
@@ -48,6 +49,31 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 - **MongoDB**: 4.4 or higher
 - **RAM**: Minimum 2GB (4GB+ recommended)
 - **Disk Space**: 5GB+ free space
+
+### For Docker Installation
+- **OS**: Any Linux with Docker support
+- **Docker**: 20.10 or higher
+- **Docker Compose**: 2.0 or higher
+- **RAM**: Minimum 4GB (for containers)
+- **Disk Space**: 3GB+ free space
+
+## Choosing Your Installation Method
+
+### 🐳 Choose Docker If:
+- You want **quick deployment** (2-3 minutes)
+- You're deploying to **production**
+- You need **environment isolation**
+- You want **easy cleanup/removal**
+- You're deploying to **multiple servers**
+
+### 💻 Choose Native If:
+- You're **developing/testing** locally
+- You want **direct file access**
+- You prefer **traditional setup**
+- You have **resource constraints**
+- You want **system integration** (systemd)
+
+**Need help deciding?** See [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) for detailed comparison.
 
 ## Installation
 
