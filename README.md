@@ -77,13 +77,34 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ## Installation
 
-### Option 1: Automatic Installation (Recommended)
+### Quick Start - Interactive Installer (Recommended)
 
-Run the automated installation script for native deployment:
+The easiest way to install with guided setup:
 
 ```bash
 cd /app/scripts
-chmod +x install.sh
+./install.sh
+```
+
+**Interactive Menu Features:**
+- 🎯 Auto-detects existing installations
+- 📋 5 easy options to choose from
+- 🐳 Option 1: Install Docker & Docker Compose
+- 💻 Option 2: Install Panel (Native) + Guided Setup
+- 🔒 Option 3: Install SSL Certificates (Let's Encrypt)
+- 🔄 Option 4: Restart/Re-detect System
+- 🚪 Option 5: Exit with Quick Start Guide
+
+**See:** [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed menu documentation.
+
+---
+
+### Option 1: Automatic Installation
+
+For experienced users who want one-command setup:
+
+```bash
+cd /app/scripts
 ./install.sh --auto
 ```
 
@@ -95,7 +116,9 @@ The script will:
 - Create necessary directories
 - Set up environment files
 
-### Option 2: Docker Installation (Optional)
+---
+
+### Option 2: Docker Installation (Alternative)
 
 If you prefer containerized deployment with Docker:
 
