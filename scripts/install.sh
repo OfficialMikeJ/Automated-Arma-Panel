@@ -242,8 +242,152 @@ install_docker_and_compose() {
 }
 
 ###############################################################################
-# Install Dependencies
+# Main Menu
 ###############################################################################
+
+show_main_menu() {
+    while true; do
+        print_header
+        
+        # Show installation status
+        echo -e "${CYAN}Installation Status:${NC}"
+        echo ""
+        if [ "$DOCKER_INSTALLED" = true ]; then
+            echo -e "  ${GREEN}✓${NC} Docker: ${GREEN}Installed${NC}"
+        else
+            echo -e "  ${RED}✗${NC} Docker: ${RED}Not Installed${NC}"
+        fi
+        
+        if [ "$DOCKER_COMPOSE_INSTALLED" = true ]; then
+            echo -e "  ${GREEN}✓${NC} Docker Compose: ${GREEN}Installed${NC}"
+        else
+            echo -e "  ${RED}✗${NC} Docker Compose: ${RED}Not Installed${NC}"
+        fi
+        
+        if [ "$MONGODB_INSTALLED" = true ]; then
+            echo -e "  ${GREEN}✓${NC} MongoDB: ${GREEN}Installed${NC}"
+        else
+            echo -e "  ${RED}✗${NC} MongoDB: ${RED}Not Installed${NC}"
+        fi
+        
+        if [ "$PANEL_INSTALLED" = true ]; then
+            echo -e "  ${GREEN}✓${NC} Panel: ${GREEN}Installed${NC}"
+        else
+            echo -e "  ${RED}✗${NC} Panel: ${RED}Not Installed${NC}"
+        fi
+        
+        echo ""
+        print_separator
+        echo ""
+        echo -e "${CYAN}Installation Options:${NC}"
+        echo ""
+        echo -e "  ${GREEN}1${NC}) Install Docker & Docker Compose (Latest Versions)"
+        echo -e "  ${GREEN}2${NC}) Install Panel - Native Installation + Guided Setup"
+        echo -e "  ${GREEN}3${NC}) Install SSL Certificates (Let's Encrypt)"
+        echo -e "  ${GREEN}4${NC}) Restart Installation (Re-detect System)"
+        echo -e "  ${GREEN}5${NC}) Exit Installer"
+        echo ""
+        print_separator
+        echo ""
+        read -p "Select option [1-5]: " choice
+        
+        case $choice in
+            1)
+                install_docker_and_compose
+                detect_installations
+                ;;
+            2)
+                install_native_panel
+                detect_installations
+                ;;
+            3)
+                install_ssl_certificates
+                ;;
+            4)
+                log "Restarting installation..."
+                detect_installations
+                success "System re-detected!"
+                pause
+                ;;
+            5)
+                echo ""
+                info "Exiting installer..."
+                echo ""
+                if [ "$PANEL_INSTALLED" = true ]; then
+                    print_quick_start
+                fi
+                echo ""
+                exit 0
+                ;;
+            *)
+                error "Invalid option. Please select 1-5."
+                pause
+                ;;
+        esac
+    done
+}
+
+###############################################################################
+# Quick Start Guide
+###############################################################################
+
+print_quick_start() {
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}                         ${GREEN}Quick Start Guide${NC}                        ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    if [ "$DOCKER_INSTALLED" = true ] && [ "$DOCKER_COMPOSE_INSTALLED" = true ]; then
+        echo -e "${YELLOW}Option A: Start with Docker${NC}"
+        echo ""
+        echo "  1. Deploy with Docker Compose:"
+        echo -e "     ${CYAN}cd $ROOT_DIR${NC}"
+        echo -e "     ${CYAN}docker-compose up -d${NC}"
+        echo ""
+        echo "  2. View logs:"
+        echo -e "     ${CYAN}docker-compose logs -f${NC}"
+        echo ""
+        echo "  3. Access panel:"
+        echo -e "     ${CYAN}http://localhost:3000${NC}"
+        echo ""
+        print_separator
+        echo ""
+    fi
+    
+    if [ "$PANEL_INSTALLED" = true ]; then
+        echo -e "${YELLOW}Option B: Start with Native Installation${NC}"
+        echo ""
+        echo "  1. Start MongoDB:"
+        echo -e "     ${CYAN}sudo systemctl start mongod${NC}"
+        echo ""
+        echo "  2. Start backend (Terminal 1):"
+        echo -e "     ${CYAN}cd $BACKEND_DIR${NC}"
+        echo -e "     ${CYAN}source venv/bin/activate${NC}"
+        echo -e "     ${CYAN}uvicorn server:app --host 0.0.0.0 --port 8001 --reload${NC}"
+        echo ""
+        echo "  3. Start frontend (Terminal 2):"
+        echo -e "     ${CYAN}cd $FRONTEND_DIR${NC}"
+        echo -e "     ${CYAN}yarn start${NC}"
+        echo ""
+        echo "  4. Access panel:"
+        echo -e "     ${CYAN}http://localhost:3000${NC}"
+        echo ""
+        print_separator
+        echo ""
+    fi
+    
+    echo -e "${YELLOW}Production Deployment:${NC}"
+    echo ""
+    echo "  • Setup systemd services:"
+    echo -e "    ${CYAN}sudo ./scripts/setup-systemd.sh${NC}"
+    echo ""
+    echo "  • Enable backups:"
+    echo -e "    ${CYAN}./scripts/backup.sh${NC}"
+    echo ""
+    echo "  • View full documentation:"
+    echo -e "    ${CYAN}README.md, DEPLOYMENT.md, QUICKSTART.md${NC}"
+    echo ""
+}
 
 install_yarn() {
     if ! command -v yarn &> /dev/null; then
