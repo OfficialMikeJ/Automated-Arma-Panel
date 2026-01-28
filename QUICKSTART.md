@@ -2,13 +2,25 @@
 
 Get Tactical Command up and running in minutes!
 
-## Prerequisites
+## Choose Your Installation Method
+
+### Option 1: Native Installation (Recommended for Development)
+Traditional installation with all dependencies on your system.
+
+### Option 2: Docker Installation (Recommended for Production)
+Containerized deployment with isolated environment.
+
+---
+
+## Option 1: Native Installation
+
+### Prerequisites
 
 - Linux server (Ubuntu 20.04+ recommended)
 - sudo access
 - Internet connection
 
-## One-Command Installation
+### One-Command Installation
 
 ```bash
 cd /app/scripts && chmod +x install.sh && ./install.sh --auto
@@ -22,7 +34,55 @@ This will automatically:
 - Configure environment files
 - Create necessary directories
 
-## Starting the Application
+---
+
+## Option 2: Docker Installation
+
+### Prerequisites
+
+- Docker installed
+- Docker Compose installed
+
+### Install Docker (if needed)
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+### Deploy with Docker
+
+```bash
+cd /app
+
+# Start all services (MongoDB, Backend, Frontend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Check status
+docker-compose ps
+```
+
+### Access the Application
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8001
+
+**Docker Benefits:**
+- No dependency installation needed
+- Isolated environment
+- Production-ready configuration
+- Easy cleanup: `docker-compose down`
+
+---
+
+## Starting the Application (Native Installation)
 
 ### 1. Start MongoDB (if not running)
 ```bash
