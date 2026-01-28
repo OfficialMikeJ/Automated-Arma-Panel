@@ -2,14 +2,13 @@
 
 ###############################################################################
 # Tactical Command - Arma Server Management Panel
-# Installation Script
+# Interactive Installation Script
 #
-# This script automates the installation and setup process for the panel.
-# It can run in automatic mode or guide you through manual configuration.
+# This script provides a guided installation experience with multiple options.
 #
 # Usage:
-#   ./install.sh --auto    # Automatic installation with defaults
-#   ./install.sh --manual  # Interactive installation
+#   ./install.sh           # Interactive menu (default)
+#   ./install.sh --auto    # Quick automatic installation
 #   ./install.sh --help    # Show help
 ###############################################################################
 
@@ -20,10 +19,12 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Installation mode
-INSTALL_MODE="manual"
+INSTALL_MODE="interactive"
 
 # Directories
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
@@ -33,6 +34,12 @@ SCRIPTS_DIR="$ROOT_DIR/scripts"
 
 # Log file
 LOG_FILE="$ROOT_DIR/install.log"
+
+# Installation state
+DOCKER_INSTALLED=false
+DOCKER_COMPOSE_INSTALLED=false
+MONGODB_INSTALLED=false
+PANEL_INSTALLED=false
 
 ###############################################################################
 # Helper Functions
