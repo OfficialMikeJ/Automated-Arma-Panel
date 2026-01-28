@@ -163,7 +163,7 @@ docker-compose logs -f
 - Backend API with health checks
 - Frontend with optimized nginx build
 
-**Note:** Docker is completely optional. Choose Option 1 for native installation or Option 2 for containerized deployment.
+**Note:** Docker is completely optional. The interactive installer (Option 1) lets you choose between Docker or Native installation.
 
 ### Option 3: Manual Installation (Advanced)
 
