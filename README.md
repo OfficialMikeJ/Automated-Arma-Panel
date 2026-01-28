@@ -116,9 +116,9 @@ docker-compose logs -f
 
 **Note:** Docker is completely optional. Choose Option 1 for native installation or Option 2 for containerized deployment.
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation (Advanced)
 
-**Note:** You can skip this if using Docker (see Option 2 in Installation section).
+**Note:** You can skip this if using Option 1 (automatic) or Option 2 (Docker).
 
 #### 1. Clone the Repository
 ```bash
