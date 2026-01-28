@@ -118,6 +118,8 @@ docker-compose logs -f
 
 ### Option 2: Manual Installation
 
+**Note:** You can skip this if using Docker (see Option 2 in Installation section).
+
 #### 1. Clone the Repository
 ```bash
 git clone <your-repo-url>
