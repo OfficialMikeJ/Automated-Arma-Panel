@@ -436,6 +436,10 @@ main() {
         --manual)
             INSTALL_MODE="manual"
             ;;
+        --docker)
+            show_docker_guide
+            exit 0
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -452,8 +456,11 @@ main() {
     
     # Start installation
     print_header
-    log "Starting installation in $INSTALL_MODE mode..."
+    log "Starting NATIVE installation in $INSTALL_MODE mode..."
     log "Installation directory: $ROOT_DIR"
+    log ""
+    info "💡 Tip: For Docker deployment, run: ./install.sh --docker"
+    echo ""
     
     # Check if running as root
     check_root
