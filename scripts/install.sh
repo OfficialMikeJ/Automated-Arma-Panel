@@ -61,34 +61,37 @@ info() {
     echo -e "${BLUE}[INFO]${NC} $1" | tee -a "$LOG_FILE"
 }
 
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
+}
+
 print_header() {
+    clear
     echo ""
-    echo "═══════════════════════════════════════════════════════════════"
-    echo -e "  ${GREEN}TACTICAL COMMAND - ARMA SERVER MANAGEMENT PANEL${NC}"
-    echo "  Installation Script"
-    echo "═══════════════════════════════════════════════════════════════"
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                                                                   ║${NC}"
+    echo -e "${CYAN}║${NC}     ${GREEN}TACTICAL COMMAND - ARMA SERVER MANAGEMENT PANEL${NC}      ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}                    ${BLUE}Interactive Installer${NC}                     ${CYAN}║${NC}"
+    echo -e "${CYAN}║                                                                   ║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 
-check_root() {
-    if [ "$EUID" -eq 0 ]; then
-        warn "Running as root. This is not recommended for development."
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    fi
+print_separator() {
+    echo -e "${CYAN}───────────────────────────────────────────────────────────────────${NC}"
 }
 
 check_command() {
     if command -v "$1" &> /dev/null; then
-        log "✓ $1 is installed"
         return 0
     else
-        error "✗ $1 is not installed"
         return 1
     fi
+}
+
+pause() {
+    echo ""
+    read -p "Press Enter to continue..."
 }
 
 ###############################################################################
