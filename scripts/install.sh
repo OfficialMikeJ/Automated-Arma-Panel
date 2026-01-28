@@ -342,14 +342,87 @@ Tactical Command - Installation Script
 Usage: $0 [OPTIONS]
 
 Options:
-    --auto      Automatic installation with default settings
-    --manual    Interactive installation (default)
+    --auto      Automatic native installation with default settings
+    --manual    Interactive native installation (default)
+    --docker    Show Docker installation instructions
     --help      Show this help message
 
 Examples:
-    $0 --auto           # Quick automatic installation
-    $0 --manual         # Step-by-step installation
+    $0 --auto           # Quick automatic native installation
+    $0 --manual         # Step-by-step native installation
+    $0 --docker         # Show Docker setup guide
     $0                  # Same as --manual
+
+Note: This script installs natively. For Docker deployment, use --docker option
+      or see README.md for Docker Compose instructions.
+
+EOF
+}
+
+show_docker_guide() {
+    cat << EOF
+
+═══════════════════════════════════════════════════════════════
+  Docker Installation Guide
+═══════════════════════════════════════════════════════════════
+
+Docker provides an isolated, containerized deployment option.
+
+Prerequisites:
+--------------
+1. Install Docker:
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+
+2. Install Docker Compose:
+   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+   sudo chmod +x /usr/local/bin/docker-compose
+
+Quick Start:
+------------
+1. Navigate to project directory:
+   cd $ROOT_DIR
+
+2. Start all services:
+   docker-compose up -d
+
+3. View logs:
+   docker-compose logs -f
+
+4. Access the panel:
+   Frontend: http://localhost:3000
+   Backend:  http://localhost:8001
+
+Management:
+-----------
+• Stop services:     docker-compose down
+• Restart services:  docker-compose restart
+• View status:       docker-compose ps
+• Update services:   docker-compose up -d --build
+
+What's Included:
+----------------
+• MongoDB with persistent storage
+• Backend API (FastAPI)
+• Frontend (React with nginx)
+• Health checks for all services
+• Automatic restart on failure
+• Isolated network
+
+Benefits:
+---------
+✓ No dependency conflicts
+✓ Easy cleanup and removal
+✓ Consistent across systems
+✓ Production-ready configuration
+✓ Simple backup/restore with volumes
+
+For more details, see:
+• README.md - Full documentation
+• DEPLOYMENT.md - Production deployment guide
+• docker-compose.yml - Service configuration
+
+═══════════════════════════════════════════════════════════════
 
 EOF
 }
