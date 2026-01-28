@@ -580,27 +580,141 @@ print_summary() {
 
 show_help() {
     cat << EOF
-Tactical Command - Installation Script
+═══════════════════════════════════════════════════════════════
+  Tactical Command - Interactive Installation Script
+═══════════════════════════════════════════════════════════════
 
 Usage: $0 [OPTIONS]
 
-Options:
-    --auto      Automatic native installation with default settings
-    --manual    Interactive native installation (default)
-    --docker    Show Docker installation instructions
+OPTIONS:
+    (none)      Interactive menu (default - recommended)
+    --auto      Quick automatic installation
     --help      Show this help message
 
-Examples:
-    $0 --auto           # Quick automatic native installation
-    $0 --manual         # Step-by-step native installation
-    $0 --docker         # Show Docker setup guide
-    $0                  # Same as --manual
+INTERACTIVE MODE (default):
+    Run without arguments for guided installation menu:
+    • Install Docker & Docker Compose
+    • Install Panel (Native) with guided setup
+    • Configure SSL/HTTPS certificates
+    • Re-detect system state
+    • Exit with quick start guide
 
-Note: This script installs natively. For Docker deployment, use --docker option
-      or see README.md for Docker Compose instructions.
+AUTOMATIC MODE:
+    Quick one-command installation:
+    $0 --auto
+
+EXAMPLES:
+    $0                  # Interactive menu
+    $0 --auto           # Automatic installation
+    $0 --help           # Show this help
+
+FEATURES:
+    ✓ Auto-detect existing installations
+    ✓ Guided configuration setup
+    ✓ Docker and Native installation options
+    ✓ Let's Encrypt SSL support
+    ✓ Production-ready setup
+    ✓ Comprehensive logging
+
+For more information, see:
+    • README.md - Full documentation
+    • QUICKSTART.md - Quick setup guide
+    • DEPLOYMENT.md - Production deployment
+
+═══════════════════════════════════════════════════════════════
 
 EOF
 }
+
+quick_auto_install() {
+    print_header
+    log "Starting automatic installation..."
+    echo ""
+    
+    detect_installations
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    # Install Docker if not present
+    if [ "$DOCKER_INSTALLED" = false ] || [ "$DOCKER_COMPOSE_INSTALLED" = false ]; then
+        warn "Docker/Docker Compose not found"
+        read -p "Install Docker & Docker Compose? (Y/n): " -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            install_docker_and_compose
+            detect_installations
+        fi
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    # Install panel if not present
+    if [ "$PANEL_INSTALLED" = false ]; then
+        info "Installing panel natively..."
+        echo ""
+        
+        # Source installation functions
+        source "$SCRIPTS_DIR/install-functions.sh"
+        
+        install_native_panel
+        detect_installations
+    else
+        success "Panel already installed!"
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    success "Automatic installation complete!"
+    echo ""
+    print_quick_start
+    echo ""
+}
+
+main() {
+    # Source installation functions
+    if [ -f "$SCRIPTS_DIR/install-functions.sh" ]; then
+        source "$SCRIPTS_DIR/install-functions.sh"
+    fi
+    
+    # Parse arguments
+    case "${1:-}" in
+        --auto)
+            quick_auto_install
+            exit 0
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        "")
+            # Interactive mode (default)
+            print_header
+            info "Welcome to the Tactical Command installer!"
+            echo ""
+            info "Detecting your system..."
+            echo ""
+            detect_installations
+            echo ""
+            info "Press Enter to continue to the main menu..."
+            read
+            show_main_menu
+            ;;
+        *)
+            error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function
+main "$@"
 
 show_docker_guide() {
     cat << EOF
