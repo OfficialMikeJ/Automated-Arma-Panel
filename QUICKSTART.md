@@ -2,6 +2,19 @@
 
 Get Tactical Command up and running in minutes!
 
+## ⚠️ Ubuntu Server 24.04 - Fix Permissions First
+
+If you're on Ubuntu Server and get "Permission denied" errors:
+
+```bash
+cd /app/scripts
+sudo ./fix-permissions.sh
+```
+
+This fixes file ownership and makes scripts executable.
+
+---
+
 ## Choose Your Installation Method
 
 ### Option 1: Native Installation (Recommended for Development)
