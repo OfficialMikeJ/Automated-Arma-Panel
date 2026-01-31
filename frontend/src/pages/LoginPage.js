@@ -148,6 +148,24 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
                 </div>
               </div>
 
+              {isLogin && requiresTOTP && (
+                <div>
+                  <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground/80 block mb-2">
+                    2FA Code
+                  </label>
+                  <input
+                    data-testid="totp-code-input"
+                    type="text"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="flex h-10 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary font-mono tracking-widest text-center"
+                    placeholder="000000"
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+              )}
+
               <button
                 data-testid="submit-button"
                 type="submit"
