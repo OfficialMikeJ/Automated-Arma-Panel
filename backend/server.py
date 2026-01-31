@@ -194,6 +194,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     username: str
+    requires_totp_setup: bool = False
+    totp_enabled: bool = False
+    session_timeout_minutes: int = SESSION_TIMEOUT_MINUTES
 
 class ServerInstance(BaseModel):
     model_config = ConfigDict(extra="ignore")
