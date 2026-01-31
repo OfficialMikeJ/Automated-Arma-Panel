@@ -99,6 +99,8 @@ cd /app/scripts
 ./install.sh
 ```
 
+**What happens:** The installer will auto-detect if Python 3 or Node.js are missing and offer to install them for you!
+
 **Interactive Menu Features:**
 - 🎯 Auto-detects existing installations
 - 📋 5 easy options to choose from
@@ -108,6 +110,8 @@ cd /app/scripts
 - 🔄 Option 4: Restart/Re-detect System
 - 🚪 Option 5: Exit with Quick Start Guide
 - ✨ **NEW**: Auto-installs Python 3 & Node.js if missing
+
+**Need help?** See [QUICK_INSTALL.md](QUICK_INSTALL.md) for step-by-step instructions.
 
 **See:** [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed menu documentation.
 
