@@ -437,6 +437,14 @@ async def start_server(
     if not server:
         raise HTTPException(status_code=404, detail="Server not found")
     
+    # Check if SteamCMD is installed
+    steamcmd_path = Path.home() / "steamcmd" / "steamcmd.sh"
+    if not steamcmd_path.exists():
+        raise HTTPException(
+            status_code=400, 
+            detail="SteamCMD is not installed. Please install SteamCMD before starting servers."
+        )
+    
     # Create logs directory if it doesn't exist
     logs_dir = Path("/tmp/arma_servers") / server_id / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
