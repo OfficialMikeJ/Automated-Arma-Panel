@@ -33,13 +33,16 @@ install_native_panel() {
     echo ""
     
     local all_good=true
+    local needs_python=false
+    local needs_nodejs=false
     
     # Check Python
     if check_command python3; then
         PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
         success "✓ Python: $PYTHON_VERSION"
     else
-        error "✗ Python 3 is required but not installed"
+        warn "✗ Python 3 is not installed"
+        needs_python=true
         all_good=false
     fi
     
@@ -48,14 +51,82 @@ install_native_panel() {
         NODE_VERSION=$(node --version)
         success "✓ Node.js: $NODE_VERSION"
     else
-        error "✗ Node.js is required but not installed"
+        warn "✗ Node.js is not installed"
+        needs_nodejs=true
         all_good=false
     fi
     
+    # Offer to install missing dependencies
     if [ "$all_good" = false ]; then
-        error "Missing dependencies. Please install Python 3.11+ and Node.js 16+ first."
-        pause
-        return 1
+        echo ""
+        warn "Missing dependencies detected!"
+        echo ""
+        read -p "Would you like to install missing dependencies automatically? (Y/n): " -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            # Install Python
+            if [ "$needs_python" = true ]; then
+                log "Installing Python 3..."
+                echo ""
+                
+                if [ -f /etc/debian_version ]; then
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-pip python3-venv
+                    success "✓ Python 3 installed"
+                elif [ -f /etc/redhat-release ]; then
+                    sudo yum install -y python3 python3-pip
+                    success "✓ Python 3 installed"
+                else
+                    error "Unable to auto-install Python on this distribution"
+                    error "Please install Python 3.11+ manually"
+                    pause
+                    return 1
+                fi
+                echo ""
+            fi
+            
+            # Install Node.js
+            if [ "$needs_nodejs" = true ]; then
+                log "Installing Node.js..."
+                echo ""
+                
+                if [ -f /etc/debian_version ]; then
+                    info "Adding NodeSource repository..."
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                    sudo apt-get install -y nodejs
+                    success "✓ Node.js installed"
+                elif [ -f /etc/redhat-release ]; then
+                    info "Adding NodeSource repository..."
+                    curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+                    sudo yum install -y nodejs
+                    success "✓ Node.js installed"
+                else
+                    error "Unable to auto-install Node.js on this distribution"
+                    error "Please install Node.js 16+ manually from: https://nodejs.org/"
+                    pause
+                    return 1
+                fi
+                echo ""
+            fi
+            
+            # Verify installations
+            if check_command python3 && check_command node; then
+                success "✓ All dependencies installed successfully!"
+                PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
+                NODE_VERSION=$(node --version)
+                info "Python: $PYTHON_VERSION"
+                info "Node.js: $NODE_VERSION"
+            else
+                error "Installation verification failed"
+                pause
+                return 1
+            fi
+        else
+            error "Installation cancelled. Please install Python 3.11+ and Node.js 16+ manually."
+            pause
+            return 1
+        fi
     fi
     
     echo ""
