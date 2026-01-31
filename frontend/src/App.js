@@ -6,6 +6,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import FirstTimeSetupPage from "./pages/FirstTimeSetupPage";
 import PasswordResetPage from "./pages/PasswordResetPage";
+import TOTPSetupModal from "./components/TOTPSetupModal";
+import { useSessionTimeout, SessionTimeoutWarning } from "./hooks/useSessionTimeout";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -16,6 +18,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isFirstRun, setIsFirstRun] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [showTOTPSetup, setShowTOTPSetup] = useState(false);
+
+  const { showWarning, timeRemaining, refreshSession } = useSessionTimeout({
+    onTimeout: handleLogout
+  });
 
   useEffect(() => {
     checkFirstRun();
@@ -35,25 +42,42 @@ function App() {
     }
   };
 
-  const handleLogin = (token, username) => {
+  const handleLogin = (token, username, requires_totp_setup, session_timeout) => {
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
+    localStorage.setItem('login_time', Date.now().toString());
+    localStorage.setItem('session_timeout', session_timeout.toString());
     setIsAuthenticated(true);
+    
+    // Check if TOTP setup is required
+    if (requires_totp_setup) {
+      setShowTOTPSetup(true);
+    }
   };
 
-  const handleLogout = () => {
+  function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('login_time');
+    localStorage.removeItem('session_timeout');
     setIsAuthenticated(false);
-  };
+  }
 
-  const handleFirstTimeSetup = (token, username) => {
+  const handleFirstTimeSetup = (token, username, requires_totp_setup, session_timeout) => {
     setIsFirstRun(false);
-    handleLogin(token, username);
+    handleLogin(token, username, requires_totp_setup, session_timeout);
   };
 
   const handlePasswordResetSuccess = () => {
     setShowPasswordReset(false);
+  };
+
+  const handleTOTPComplete = () => {
+    setShowTOTPSetup(false);
+  };
+
+  const handleTOTPSkip = () => {
+    setShowTOTPSetup(false);
   };
 
   if (loading) {
@@ -112,6 +136,24 @@ function App() {
           />
         </Routes>
       </BrowserRouter>
+      
+      {/* TOTP Setup Modal */}
+      {showTOTPSetup && (
+        <TOTPSetupModal 
+          onComplete={handleTOTPComplete}
+          onSkip={handleTOTPSkip}
+        />
+      )}
+      
+      {/* Session Timeout Warning */}
+      {isAuthenticated && (
+        <SessionTimeoutWarning
+          timeRemaining={timeRemaining}
+          onRefresh={refreshSession}
+          onLogout={handleLogout}
+        />
+      )}
+      
       <Toaster position="top-right" richColors />
     </>
   );
