@@ -387,15 +387,42 @@ async def login(user_data: UserLogin):
     if not verify_password(user_data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
+    # Check if TOTP is enabled
+    totp_enabled = user.get("totp_enabled", False)
+    
+    if totp_enabled:
+        # TOTP is enabled, verify code
+        if not user_data.totp_code:
+            raise HTTPException(status_code=401, detail="2FA code required")
+        
+        totp = pyotp.TOTP(user["totp_secret"])
+        if not totp.verify(user_data.totp_code, valid_window=1):
+            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+    
+    # Update last login
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+    )
+    
     # Create token
     access_token = create_access_token(
         data={"sub": user["id"], "username": user["username"]}
     )
     
+    # Check if admin needs to setup TOTP (first login after creation)
+    requires_totp_setup = (
+        user.get("is_admin", False) and 
+        not totp_enabled and 
+        user.get("last_login") is None
+    )
+    
     return Token(
         access_token=access_token,
         token_type="bearer",
-        username=user["username"]
+        username=user["username"],
+        requires_totp_setup=requires_totp_setup,
+        totp_enabled=totp_enabled
     )
 
 @api_router.post("/auth/reset-password")
