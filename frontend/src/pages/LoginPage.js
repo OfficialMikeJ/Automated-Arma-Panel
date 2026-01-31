@@ -11,6 +11,8 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [requiresTOTP, setRequiresTOTP] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -19,17 +21,35 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
 
     try {
       const endpoint = isLogin ? "/auth/login" : "/auth/register";
-      const response = await axios.post(`${API}${endpoint}`, {
+      const payload = {
         username,
         password,
-      });
+      };
+      
+      // Add TOTP code if required
+      if (isLogin && totpCode) {
+        payload.totp_code = totpCode;
+      }
+      
+      const response = await axios.post(`${API}${endpoint}`, payload);
 
       toast.success(isLogin ? "Login successful" : "Registration successful");
-      onLogin(response.data.access_token, response.data.username);
-    } catch (error) {
-      toast.error(
-        error.response?.data?.detail || "Authentication failed"
+      onLogin(
+        response.data.access_token, 
+        response.data.username,
+        response.data.requires_totp_setup,
+        response.data.session_timeout_minutes
       );
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || "Authentication failed";
+      
+      // Check if TOTP is required
+      if (errorMsg.includes("2FA code required")) {
+        setRequiresTOTP(true);
+        toast.error("Please enter your 2FA code");
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
