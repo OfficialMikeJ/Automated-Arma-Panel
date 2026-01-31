@@ -885,14 +885,105 @@ async def restart_server(
         {"$set": {"status": "restarting"}}
     )
     
-    # Stop the server
+    # Stop the server first
     if server.get("pid"):
         try:
+            # Send SIGTERM for graceful shutdown
             os.killpg(os.getpgid(server["pid"]), signal.SIGTERM)
+            
+            # Wait up to 10 seconds for process to terminate
+            for _ in range(10):
+                try:
+                    os.kill(server["pid"], 0)
+                    await asyncio.sleep(1)
+                except OSError:
+                    break
+            else:
+                # Force kill if still alive
+                try:
+                    os.killpg(os.getpgid(server["pid"]), signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         except ProcessLookupError:
             pass
         except Exception as e:
-            logger.warning(f"Error killing process {server['pid']}: {e}")
+            logger.warning(f"Error stopping server during restart: {e}")
+    
+    # Wait a moment before restarting
+    await asyncio.sleep(2)
+    
+    # Start the server again (reuse start logic)
+    try:
+        server_dir = Path(server["install_path"])
+        logs_dir = server_dir / "logs"
+        configs_dir = server_dir / "configs"
+        profiles_dir = server_dir / "profiles"
+        
+        if server["game_type"] == "arma_reforger":
+            server_executable = server_dir / "ArmaReforgerServer"
+        else:
+            server_executable = server_dir / "Arma4Server"
+        
+        if not server_executable.exists():
+            await db.servers.update_one(
+                {"id": server_id},
+                {"$set": {"status": "offline", "pid": None}}
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Server executable not found at {server_executable}"
+            )
+        
+        config_file = configs_dir / "server.json"
+        log_file = logs_dir / f"server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        
+        cmd = [
+            str(server_executable),
+            f"-config={config_file}",
+            f"-profile={profiles_dir}",
+            "-maxFPS=60"
+        ]
+        
+        process = subprocess.Popen(
+            cmd,
+            stdout=open(log_file, "w"),
+            stderr=subprocess.STDOUT,
+            cwd=str(server_dir),
+            preexec_fn=os.setsid
+        )
+        
+        await asyncio.sleep(2)
+        
+        if process.poll() is not None:
+            await db.servers.update_one(
+                {"id": server_id},
+                {"$set": {"status": "offline", "pid": None}}
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Server failed to restart. Check log: {log_file}"
+            )
+        
+        await db.servers.update_one(
+            {"id": server_id},
+            {"$set": {"status": "online", "current_players": 0, "pid": process.pid}}
+        )
+        
+        return {
+            "message": "Server restarted successfully",
+            "status": "online",
+            "pid": process.pid,
+            "log_file": str(log_file)
+        }
+    except Exception as e:
+        await db.servers.update_one(
+            {"id": server_id},
+            {"$set": {"status": "offline", "pid": None}}
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to restart server: {str(e)}"
+        )
     
     # Wait a bit
     await asyncio.sleep(2)
