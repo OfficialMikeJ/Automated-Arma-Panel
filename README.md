@@ -77,6 +77,19 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ## Installation
 
+### ⚠️ Ubuntu Server 24.04 LTS - Fix Permissions First
+
+If you get "Permission denied" errors on Ubuntu Server, run this first:
+
+```bash
+cd /app/scripts
+sudo ./fix-permissions.sh
+```
+
+This will fix ownership and make all scripts executable.
+
+---
+
 ### Quick Start - Interactive Installer (Recommended)
 
 The easiest way to install with guided setup:
