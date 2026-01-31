@@ -62,17 +62,61 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
     hashed_password: str
-    security_questions: Optional[dict] = None  # {q1: answer1, q2: answer2, q3: answer3, q4: answer4}
+    security_questions: Optional[dict] = None
+    totp_secret: Optional[str] = None
+    totp_enabled: bool = False
     is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_login: Optional[datetime] = None
+
+class PasswordComplexityConfig(BaseModel):
+    min_length: int
+    require_uppercase: bool
+    require_lowercase: bool
+    require_numbers: bool
+    require_special: bool
 
 class UserCreate(BaseModel):
     username: str
     password: str
     security_questions: Optional[dict] = None
+    
+    @validator('password')
+    def validate_password(cls, v):
+        errors = []
+        
+        if len(v) < PASSWORD_MIN_LENGTH:
+            errors.append(f"Password must be at least {PASSWORD_MIN_LENGTH} characters")
+        
+        if PASSWORD_REQUIRE_UPPERCASE and not re.search(r'[A-Z]', v):
+            errors.append("Password must contain at least one uppercase letter")
+        
+        if PASSWORD_REQUIRE_LOWERCASE and not re.search(r'[a-z]', v):
+            errors.append("Password must contain at least one lowercase letter")
+        
+        if PASSWORD_REQUIRE_NUMBERS and not re.search(r'[0-9]', v):
+            errors.append("Password must contain at least one number")
+        
+        if PASSWORD_REQUIRE_SPECIAL and not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            errors.append("Password must contain at least one special character")
+        
+        if errors:
+            raise ValueError("; ".join(errors))
+        
+        return v
 
 class UserLogin(BaseModel):
     username: str
+    password: str
+    totp_code: Optional[str] = None
+
+class TOTPSetup(BaseModel):
+    pass
+
+class TOTPVerify(BaseModel):
+    totp_code: str
+
+class TOTPDisable(BaseModel):
     password: str
 
 class SecurityQuestionsSetup(BaseModel):
@@ -92,11 +136,59 @@ class PasswordResetRequest(BaseModel):
     answer3: str
     answer4: str
     new_password: str
+    
+    @validator('new_password')
+    def validate_password(cls, v):
+        errors = []
+        
+        if len(v) < PASSWORD_MIN_LENGTH:
+            errors.append(f"Password must be at least {PASSWORD_MIN_LENGTH} characters")
+        
+        if PASSWORD_REQUIRE_UPPERCASE and not re.search(r'[A-Z]', v):
+            errors.append("Password must contain at least one uppercase letter")
+        
+        if PASSWORD_REQUIRE_LOWERCASE and not re.search(r'[a-z]', v):
+            errors.append("Password must contain at least one lowercase letter")
+        
+        if PASSWORD_REQUIRE_NUMBERS and not re.search(r'[0-9]', v):
+            errors.append("Password must contain at least one number")
+        
+        if PASSWORD_REQUIRE_SPECIAL and not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            errors.append("Password must contain at least one special character")
+        
+        if errors:
+            raise ValueError("; ".join(errors))
+        
+        return v
 
 class FirstTimeSetup(BaseModel):
     username: str
     password: str
     security_questions: dict
+    
+    @validator('password')
+    def validate_password(cls, v):
+        errors = []
+        
+        if len(v) < PASSWORD_MIN_LENGTH:
+            errors.append(f"Password must be at least {PASSWORD_MIN_LENGTH} characters")
+        
+        if PASSWORD_REQUIRE_UPPERCASE and not re.search(r'[A-Z]', v):
+            errors.append("Password must contain at least one uppercase letter")
+        
+        if PASSWORD_REQUIRE_LOWERCASE and not re.search(r'[a-z]', v):
+            errors.append("Password must contain at least one lowercase letter")
+        
+        if PASSWORD_REQUIRE_NUMBERS and not re.search(r'[0-9]', v):
+            errors.append("Password must contain at least one number")
+        
+        if PASSWORD_REQUIRE_SPECIAL and not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            errors.append("Password must contain at least one special character")
+        
+        if errors:
+            raise ValueError("; ".join(errors))
+        
+        return v
 
 class Token(BaseModel):
     access_token: str
