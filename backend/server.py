@@ -705,35 +705,117 @@ async def start_server(
     if not server:
         raise HTTPException(status_code=404, detail="Server not found")
     
-    # Check if SteamCMD is installed
-    steamcmd_path = Path.home() / "steamcmd" / "steamcmd.sh"
-    if not steamcmd_path.exists():
+    # Check if server is already running
+    if server.get("status") == "online" and server.get("pid"):
+        try:
+            # Check if process is still alive
+            os.kill(server["pid"], 0)
+            return {"message": "Server is already running", "status": "online", "pid": server["pid"]}
+        except OSError:
+            # Process is dead, continue with start
+            pass
+    
+    # Create server directory structure
+    server_dir = Path(server["install_path"])
+    logs_dir = server_dir / "logs"
+    configs_dir = server_dir / "configs"
+    profiles_dir = server_dir / "profiles"
+    
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    configs_dir.mkdir(parents=True, exist_ok=True)
+    profiles_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Check if server executable exists
+    if server["game_type"] == "arma_reforger":
+        server_executable = server_dir / "ArmaReforgerServer"
+    else:  # arma_4 (for future)
+        server_executable = server_dir / "Arma4Server"
+    
+    if not server_executable.exists():
         raise HTTPException(
-            status_code=400, 
-            detail="SteamCMD is not installed. Please install SteamCMD before starting servers."
+            status_code=400,
+            detail=f"Server executable not found at {server_executable}. Please install the server files first using SteamCMD (App ID: 1874900 for Arma Reforger)."
         )
     
-    # Create logs directory if it doesn't exist
-    logs_dir = Path("/tmp/arma_servers") / server_id / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
+    # Make executable if not already
+    server_executable.chmod(0o755)
     
-    # Start a dummy process (simulating server)
-    # In production, this would be: ./ArmaReforgerServer or similar
-    log_file = logs_dir / "server.log"
-    process = subprocess.Popen(
-        ["bash", "-c", f"while true; do echo '[$(date)] Server running on port {server['port']}...'; sleep 5; done"],
-        stdout=open(log_file, "a"),
-        stderr=subprocess.STDOUT,
-        preexec_fn=os.setsid
-    )
+    # Create server configuration file if it doesn't exist
+    config_file = configs_dir / "server.json"
+    if not config_file.exists():
+        config_data = {
+            "bindAddress": "0.0.0.0",
+            "bindPort": server["port"],
+            "publicAddress": "",  # Leave empty for auto-detection
+            "publicPort": server["port"],
+            "a2s": {
+                "address": "",
+                "port": server["port"] + 16  # A2S port typically game_port + 16
+            },
+            "game": {
+                "name": server["name"],
+                "password": "",
+                "passwordAdmin": "changeme",
+                "maxPlayers": server["max_players"],
+                "visible": True
+            },
+            "mods": []
+        }
+        
+        import json
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=2)
     
-    # Update server with PID
-    await db.servers.update_one(
-        {"id": server_id},
-        {"$set": {"status": "online", "current_players": 0, "pid": process.pid}}
-    )
+    # Prepare start command
+    log_file = logs_dir / f"server_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     
-    return {"message": "Server started successfully", "status": "online", "pid": process.pid}
+    cmd = [
+        str(server_executable),
+        f"-config={config_file}",
+        f"-profile={profiles_dir}",
+        "-maxFPS=60"
+    ]
+    
+    # Start the server process
+    try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=open(log_file, "w"),
+            stderr=subprocess.STDOUT,
+            cwd=str(server_dir),
+            preexec_fn=os.setsid  # Create new process group for proper cleanup
+        )
+        
+        # Wait a moment to check if process started successfully
+        await asyncio.sleep(2)
+        
+        # Check if process is still running
+        if process.poll() is not None:
+            # Process died immediately
+            with open(log_file, "r") as f:
+                error_log = f.read()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Server failed to start. Check log file: {log_file}. Error: {error_log[-500:]}"
+            )
+        
+        # Update server status
+        await db.servers.update_one(
+            {"id": server_id},
+            {"$set": {"status": "online", "current_players": 0, "pid": process.pid}}
+        )
+        
+        return {
+            "message": "Server started successfully",
+            "status": "online",
+            "pid": process.pid,
+            "log_file": str(log_file)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start server: {str(e)}"
+        )
 
 @api_router.post("/servers/{server_id}/stop")
 async def stop_server(
