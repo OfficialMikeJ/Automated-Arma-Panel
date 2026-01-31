@@ -107,6 +107,7 @@ cd /app/scripts
 - 🔒 Option 3: Install SSL Certificates (Let's Encrypt)
 - 🔄 Option 4: Restart/Re-detect System
 - 🚪 Option 5: Exit with Quick Start Guide
+- ✨ **NEW**: Auto-installs Python 3 & Node.js if missing
 
 **See:** [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed menu documentation.
 
