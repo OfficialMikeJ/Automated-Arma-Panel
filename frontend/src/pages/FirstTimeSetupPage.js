@@ -197,6 +197,12 @@ export default function FirstTimeSetupPage({ onComplete }) {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
+                    {/* Password Strength Indicator */}
+                    {formData.password && (
+                      <div className="mt-3">
+                        <PasswordStrengthIndicator password={formData.password} />
+                      </div>
+                    )}
                   </div>
 
                   <div>
