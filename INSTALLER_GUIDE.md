@@ -135,11 +135,20 @@ Important: You may need to log out and back in
 
 **What it does:**
 
-**Step 1: System Check**
+**Step 1: System Check (Auto-Install)**
+- ✅ **NEW**: Auto-installs Python 3 if missing
+- ✅ **NEW**: Auto-installs Node.js 18.x if missing
 - Verifies Python 3.11+
 - Verifies Node.js 16+
 - Checks for Yarn
 - Detects MongoDB
+
+**Automatic Dependency Installation:**
+- Detects Debian/Ubuntu or RHEL/CentOS
+- Uses NodeSource repository for Node.js 18.x
+- Installs Python 3, pip, and venv packages
+- Prompts user before installation
+- Verifies successful installation
 
 **Step 2: MongoDB Setup**
 - Offers to install MongoDB locally
