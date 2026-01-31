@@ -446,6 +446,129 @@ async def get_security_questions(username: str):
         "questions": list(user["security_questions"].keys())
     }
 
+@api_router.get("/auth/password-config", response_model=PasswordComplexityConfig)
+async def get_password_config():
+    """Get password complexity requirements"""
+    return PasswordComplexityConfig(
+        min_length=PASSWORD_MIN_LENGTH,
+        require_uppercase=PASSWORD_REQUIRE_UPPERCASE,
+        require_lowercase=PASSWORD_REQUIRE_LOWERCASE,
+        require_numbers=PASSWORD_REQUIRE_NUMBERS,
+        require_special=PASSWORD_REQUIRE_SPECIAL
+    )
+
+# TOTP/2FA routes
+@api_router.post("/auth/totp/setup")
+async def setup_totp(current_user: dict = Depends(get_current_user)):
+    """Generate TOTP secret and QR code for user"""
+    user = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Generate new TOTP secret
+    totp_secret = pyotp.random_base32()
+    
+    # Store secret (not enabled yet)
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": {"totp_secret": totp_secret}}
+    )
+    
+    # Generate provisioning URI
+    totp = pyotp.TOTP(totp_secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=user["username"],
+        issuer_name=TOTP_ISSUER
+    )
+    
+    return {
+        "secret": totp_secret,
+        "provisioning_uri": provisioning_uri,
+        "qr_code_url": f"/api/auth/totp/qr/{current_user['user_id']}"
+    }
+
+@api_router.get("/auth/totp/qr/{user_id}")
+async def get_totp_qr(user_id: str):
+    """Generate QR code for TOTP setup"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or not user.get("totp_secret"):
+        raise HTTPException(status_code=404, detail="TOTP not set up")
+    
+    # Generate provisioning URI
+    totp = pyotp.TOTP(user["totp_secret"])
+    provisioning_uri = totp.provisioning_uri(
+        name=user["username"],
+        issuer_name=TOTP_ISSUER
+    )
+    
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(provisioning_uri)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convert to bytes
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    
+    return StreamingResponse(buf, media_type="image/png")
+
+@api_router.post("/auth/totp/verify")
+async def verify_totp_setup(
+    verify_data: TOTPVerify,
+    current_user: dict = Depends(get_current_user)
+):
+    """Verify TOTP code and enable 2FA"""
+    user = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not user or not user.get("totp_secret"):
+        raise HTTPException(status_code=400, detail="TOTP not set up")
+    
+    # Verify code
+    totp = pyotp.TOTP(user["totp_secret"])
+    if not totp.verify(verify_data.totp_code, valid_window=1):
+        raise HTTPException(status_code=401, detail="Invalid TOTP code")
+    
+    # Enable TOTP
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": {"totp_enabled": True}}
+    )
+    
+    return {"message": "2FA enabled successfully"}
+
+@api_router.post("/auth/totp/disable")
+async def disable_totp(
+    disable_data: TOTPDisable,
+    current_user: dict = Depends(get_current_user)
+):
+    """Disable TOTP/2FA"""
+    user = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify password
+    if not verify_password(disable_data.password, user["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    # Disable TOTP
+    await db.users.update_one(
+        {"id": current_user["user_id"]},
+        {"$set": {"totp_enabled": False, "totp_secret": None}}
+    )
+    
+    return {"message": "2FA disabled successfully"}
+
+@api_router.get("/auth/totp/status")
+async def get_totp_status(current_user: dict = Depends(get_current_user)):
+    """Check if user has TOTP enabled"""
+    user = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0, "totp_enabled": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"totp_enabled": user.get("totp_enabled", False)}
+
 # Server instance routes
 @api_router.post("/servers", response_model=ServerInstance)
 async def create_server_instance(
