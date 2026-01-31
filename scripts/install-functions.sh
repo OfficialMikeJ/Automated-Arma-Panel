@@ -237,6 +237,72 @@ EOF
     mkdir -p "$ROOT_DIR/backups"
     
     success "✓ Directories created"
+    echo ""
+    
+    # Install SteamCMD
+    print_separator
+    echo ""
+    log "Step 6: Installing SteamCMD..."
+    echo ""
+    
+    read -p "Pre-install SteamCMD for Arma servers? (Y/n): " -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        install_steamcmd
+    else
+        info "Skipping SteamCMD installation"
+    fi
+}
+
+###############################################################################
+# SteamCMD Installation
+###############################################################################
+
+install_steamcmd() {
+    local steamcmd_dir="$HOME/steamcmd"
+    local steamcmd_sh="$steamcmd_dir/steamcmd.sh"
+    
+    if [ -f "$steamcmd_sh" ]; then
+        success "✓ SteamCMD already installed at $steamcmd_dir"
+        return 0
+    fi
+    
+    info "Installing SteamCMD..."
+    echo ""
+    
+    # Create directory
+    mkdir -p "$steamcmd_dir"
+    cd "$steamcmd_dir"
+    
+    # Download SteamCMD
+    info "Downloading SteamCMD..."
+    wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+    
+    if [ $? -ne 0 ]; then
+        error "Failed to download SteamCMD"
+        return 1
+    fi
+    
+    # Extract
+    info "Extracting SteamCMD..."
+    tar -xzf steamcmd_linux.tar.gz
+    rm steamcmd_linux.tar.gz
+    
+    # Make executable
+    chmod +x steamcmd.sh
+    
+    # Run once to update
+    info "Running initial SteamCMD update..."
+    ./steamcmd.sh +quit > /dev/null 2>&1
+    
+    success "✓ SteamCMD installed successfully at $steamcmd_dir"
+    echo ""
+    info "SteamCMD location: $steamcmd_sh"
+    info "You can now launch Arma servers from the panel"
+    echo ""
+    
+    return 0
 }
 
 ###############################################################################
