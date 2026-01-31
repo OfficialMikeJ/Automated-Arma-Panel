@@ -830,16 +830,35 @@ async def stop_server(
     if not server:
         raise HTTPException(status_code=404, detail="Server not found")
     
+    if server.get("status") == "offline":
+        return {"message": "Server is already offline", "status": "offline"}
+    
     # Kill the process if it exists
     if server.get("pid"):
         try:
-            # Kill the process group to ensure all child processes are killed
+            # Send SIGTERM first (graceful shutdown)
             os.killpg(os.getpgid(server["pid"]), signal.SIGTERM)
+            
+            # Wait up to 10 seconds for process to terminate
+            for _ in range(10):
+                try:
+                    os.kill(server["pid"], 0)  # Check if process still exists
+                    await asyncio.sleep(1)
+                except OSError:
+                    break  # Process is dead
+            else:
+                # Process still alive after 10 seconds, force kill
+                try:
+                    os.killpg(os.getpgid(server["pid"]), signal.SIGKILL)
+                    logger.warning(f"Server {server_id} required SIGKILL to stop")
+                except ProcessLookupError:
+                    pass
         except ProcessLookupError:
             pass  # Process already dead
         except Exception as e:
-            logger.warning(f"Error killing process {server['pid']}: {e}")
+            logger.warning(f"Error stopping server {server_id} (PID: {server['pid']}): {e}")
     
+    # Update server status
     await db.servers.update_one(
         {"id": server_id},
         {"$set": {"status": "offline", "current_players": 0, "pid": None}}
