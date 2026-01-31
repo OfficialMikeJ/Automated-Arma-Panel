@@ -282,6 +282,54 @@ async def login(user_data: UserLogin):
         username=user["username"]
     )
 
+@api_router.post("/auth/reset-password")
+async def reset_password(reset_data: PasswordResetRequest):
+    """Reset password using security questions"""
+    # Find user
+    user = await db.users.find_one({"username": reset_data.username}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user has security questions
+    if not user.get("security_questions"):
+        raise HTTPException(status_code=400, detail="Security questions not set up for this user")
+    
+    # Verify all security answers
+    security_questions = user["security_questions"]
+    answers_to_verify = [
+        ("question1", reset_data.answer1),
+        ("question2", reset_data.answer2),
+        ("question3", reset_data.answer3),
+        ("question4", reset_data.answer4)
+    ]
+    
+    for question_key, provided_answer in answers_to_verify:
+        stored_hash = security_questions.get(question_key)
+        if not stored_hash or not verify_password(provided_answer.lower().strip(), stored_hash):
+            raise HTTPException(status_code=401, detail="Security answers do not match")
+    
+    # All answers correct, update password
+    new_hashed_password = hash_password(reset_data.new_password)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"hashed_password": new_hashed_password}}
+    )
+    
+    return {"message": "Password reset successfully"}
+
+@api_router.get("/auth/security-questions/{username}")
+async def get_security_questions(username: str):
+    """Get the security questions for a user (not the answers)"""
+    user = await db.users.find_one({"username": username}, {"_id": 0, "security_questions": 1})
+    if not user or not user.get("security_questions"):
+        raise HTTPException(status_code=404, detail="Security questions not found")
+    
+    # Return only the question keys, not the hashed answers
+    return {
+        "has_questions": True,
+        "questions": list(user["security_questions"].keys())
+    }
+
 # Server instance routes
 @api_router.post("/servers", response_model=ServerInstance)
 async def create_server_instance(
