@@ -179,6 +179,49 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 # Authentication routes
+@api_router.get("/auth/check-first-run")
+async def check_first_run():
+    """Check if this is first run (no admin user exists)"""
+    admin_user = await db.users.find_one({"is_admin": True}, {"_id": 0})
+    return {"is_first_run": admin_user is None}
+
+@api_router.post("/auth/first-time-setup", response_model=Token)
+async def first_time_setup(setup_data: FirstTimeSetup):
+    """Create the first admin user with security questions"""
+    # Check if admin already exists
+    existing_admin = await db.users.find_one({"is_admin": True}, {"_id": 0})
+    if existing_admin:
+        raise HTTPException(status_code=400, detail="Admin user already exists")
+    
+    # Hash security answers
+    hashed_security = {
+        k: hash_password(v.lower().strip()) 
+        for k, v in setup_data.security_questions.items()
+    }
+    
+    # Create admin user
+    user = User(
+        username=setup_data.username,
+        hashed_password=hash_password(setup_data.password),
+        security_questions=hashed_security,
+        is_admin=True
+    )
+    
+    doc = user.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.users.insert_one(doc)
+    
+    # Create token
+    access_token = create_access_token(
+        data={"sub": user.id, "username": user.username}
+    )
+    
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        username=user.username
+    )
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserCreate):
     # Check if user exists
@@ -186,10 +229,20 @@ async def register(user_data: UserCreate):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
+    # Hash security questions if provided
+    hashed_security = None
+    if user_data.security_questions:
+        hashed_security = {
+            k: hash_password(v.lower().strip()) 
+            for k, v in user_data.security_questions.items()
+        }
+    
     # Create user
     user = User(
         username=user_data.username,
-        hashed_password=hash_password(user_data.password)
+        hashed_password=hash_password(user_data.password),
+        security_questions=hashed_security,
+        is_admin=False
     )
     
     doc = user.model_dump()
