@@ -248,6 +248,12 @@ export default function PasswordResetPage({ onCancel, onSuccess }) {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
+                    {/* Password Strength Indicator */}
+                    {formData.newPassword && (
+                      <div className="mt-3">
+                        <PasswordStrengthIndicator password={formData.newPassword} />
+                      </div>
+                    )}
                   </div>
 
                   <div>
