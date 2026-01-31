@@ -47,15 +47,41 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
     hashed_password: str
+    security_questions: Optional[dict] = None  # {q1: answer1, q2: answer2, q3: answer3, q4: answer4}
+    is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
     username: str
     password: str
+    security_questions: Optional[dict] = None
 
 class UserLogin(BaseModel):
     username: str
     password: str
+
+class SecurityQuestionsSetup(BaseModel):
+    question1: str
+    answer1: str
+    question2: str
+    answer2: str
+    question3: str
+    answer3: str
+    question4: str
+    answer4: str
+
+class PasswordResetRequest(BaseModel):
+    username: str
+    answer1: str
+    answer2: str
+    answer3: str
+    answer4: str
+    new_password: str
+
+class FirstTimeSetup(BaseModel):
+    username: str
+    password: str
+    security_questions: dict
 
 class Token(BaseModel):
     access_token: str
