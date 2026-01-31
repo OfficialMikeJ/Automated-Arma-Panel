@@ -335,7 +335,9 @@ async def first_time_setup(setup_data: FirstTimeSetup):
     return Token(
         access_token=access_token,
         token_type="bearer",
-        username=user.username
+        username=user.username,
+        requires_totp_setup=True,  # First admin login should setup TOTP
+        totp_enabled=False
     )
 
 @api_router.post("/auth/register", response_model=Token)
