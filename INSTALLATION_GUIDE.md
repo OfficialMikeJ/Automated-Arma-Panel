@@ -34,8 +34,17 @@ Choose the best installation method for your needs.
 
 ```bash
 cd /app/scripts
-./install.sh --auto
+./install.sh
 ```
+
+The installer will:
+- ✅ Auto-detect if Python 3 or Node.js are missing
+- ✅ Offer to install missing dependencies automatically
+- ✅ Install Python 3.11+ and Node.js 18.x
+- ✅ Set up Python virtual environment
+- ✅ Install all required packages
+- ✅ Configure MongoDB
+- ✅ Create necessary directories
 
 ### Pros
 
