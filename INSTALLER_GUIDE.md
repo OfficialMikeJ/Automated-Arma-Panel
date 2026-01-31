@@ -180,8 +180,24 @@ Important: You may need to log out and back in
 ═══════════════════════════════════════════════════════════════
 
 Step 1: Checking system requirements...
-✓ Python: 3.11.2
-✓ Node.js: v18.17.0
+✗ Python 3 is not installed
+✗ Node.js is not installed
+
+Missing dependencies detected!
+
+Would you like to install missing dependencies automatically? (Y/n): Y
+
+Installing Python 3...
+[INFO] Adding repositories...
+✓ Python 3 installed
+
+Installing Node.js...
+[INFO] Adding NodeSource repository...
+✓ Node.js installed
+
+✓ All dependencies installed successfully!
+Python: 3.11.2
+Node.js: v18.17.0
 
 Step 2: Installing MongoDB...
 [... installation progress ...]
