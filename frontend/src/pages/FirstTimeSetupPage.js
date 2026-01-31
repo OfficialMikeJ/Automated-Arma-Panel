@@ -85,7 +85,12 @@ export default function FirstTimeSetupPage({ onComplete }) {
       });
 
       toast.success("Admin account created successfully!");
-      onComplete(response.data.access_token, response.data.username);
+      onComplete(
+        response.data.access_token, 
+        response.data.username,
+        response.data.requires_totp_setup || false,
+        response.data.session_timeout_minutes || 60
+      );
     } catch (error) {
       toast.error(error.response?.data?.detail || "Setup failed");
     } finally {
