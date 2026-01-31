@@ -136,6 +136,19 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
               >
                 {loading ? "PROCESSING..." : isLogin ? "LOGIN" : "REGISTER"}
               </button>
+
+              {isLogin && (
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    data-testid="forgot-password-button"
+                    onClick={onForgotPassword}
+                    className="font-mono text-xs text-accent hover:text-accent/80 transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
             </form>
           </div>
 
