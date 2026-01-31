@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
