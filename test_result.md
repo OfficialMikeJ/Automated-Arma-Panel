@@ -61,7 +61,7 @@ backend:
 
   - task: "Authentication & User Management - Password Reset"
     implemented: true
-    working: false
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "medium"
@@ -70,6 +70,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ Password reset failing - security answers validation not working correctly (401 error)"
+      - working: true
+        agent: "testing"
+        comment: "✅ Password reset now working correctly after fixes - security questions validation and password update successful"
 
   - task: "Sub-Admin User System - Create Sub-Admin"
     implemented: true
