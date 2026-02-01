@@ -24,7 +24,7 @@ The panel is accessible through Emergent's preview system:
 
 **Check your Emergent dashboard for the preview URL, it will look like:**
 ```
-https://tacticalpanel.preview.emergentagent.com
+https://reforgerctl.preview.emergentagent.com
 ```
 
 ### Option 2: Direct IP Access (If Allowed)
@@ -171,7 +171,7 @@ Should see: Services RUNNING (after deployment)
     │
     ├─── Emergent Cloud (10.208.144.125)
     │    └─── ✅ Panel Running Here
-    │         └─── Preview URL: https://xxx.preview.emergentagent.com
+    │         └─── Preview URL: https://reforgerctl.preview.emergentagent.com
     │
     └─── Your Home Network
          │
