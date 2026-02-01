@@ -40,6 +40,13 @@ install_native_panel() {
     if check_command python3; then
         PYTHON_VERSION=$(python3 --version | cut -d" " -f2)
         success "✓ Python: $PYTHON_VERSION"
+        
+        # Check if python3-venv is installed
+        if ! dpkg -l 2>/dev/null | grep -q "python3.*-venv"; then
+            warn "✗ python3-venv is not installed (required for virtual environments)"
+            needs_python=true
+            all_good=false
+        fi
     else
         warn "✗ Python 3 is not installed"
         needs_python=true
