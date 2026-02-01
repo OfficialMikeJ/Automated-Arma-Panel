@@ -323,6 +323,24 @@ export default function DashboardPage({ onLogout }) {
           }}
         />
       )}
+
+      {showSubAdminManagement && (
+        <SubAdminManagementModal onClose={() => setShowSubAdminManagement(false)} />
+      )}
+
+      {showResourceManagement && selectedServerForResources && (
+        <ResourceManagementModal
+          server={selectedServerForResources}
+          onClose={() => {
+            setShowResourceManagement(false);
+            setSelectedServerForResources(null);
+          }}
+          onUpdate={() => {
+            fetchServers();
+            fetchResources();
+          }}
+        />
+      )}
     </div>
   );
 }
