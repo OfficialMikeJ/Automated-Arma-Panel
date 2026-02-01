@@ -336,7 +336,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Session has expired. Please log in again.",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    except jwt.JWTError:
+    except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=401,
             detail="Could not validate credentials",
