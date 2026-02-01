@@ -240,6 +240,7 @@ install_native_panel() {
     
     cd "$BACKEND_DIR"
     
+    # Check if venv exists, if not create it
     if [ ! -d "venv" ]; then
         info "Creating Python virtual environment..."
         python3 -m venv venv || {
@@ -248,15 +249,122 @@ install_native_panel() {
             pause
             return 1
         }
+        success "✓ Virtual environment created"
+    else
+        info "Virtual environment already exists"
     fi
     
+    # Check if venv/bin/activate exists
+    if [ ! -f "venv/bin/activate" ]; then
+        error "Virtual environment is corrupted!"
+        warn "Recreating virtual environment..."
+        rm -rf venv
+        python3 -m venv venv || {
+            error "Failed to create virtual environment!"
+            pause
+            return 1
+        }
+    fi
+    
+    # Check for emergentintegrations in requirements.txt
+    if grep -q "emergentintegrations" requirements.txt; then
+        echo ""
+        warn "Detected emergentintegrations in requirements.txt"
+        info "This package requires Emergent's private repository"
+        echo ""
+        read -p "Do you want to install emergentintegrations from Emergent repo? (y/N): " -r
+        echo ""
+        
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            info "Installing with Emergent repository..."
+            source venv/bin/activate
+            pip install --quiet emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ || {
+                warn "Failed to install emergentintegrations from Emergent repo"
+                warn "Removing emergentintegrations from requirements.txt..."
+                grep -v "emergentintegrations" requirements.txt > requirements_temp.txt
+                mv requirements_temp.txt requirements.txt
+            }
+            deactivate
+        else
+            info "Removing emergentintegrations from requirements.txt..."
+            grep -v "emergentintegrations" requirements.txt > requirements_temp.txt
+            mv requirements_temp.txt requirements.txt
+        fi
+    fi
+    
+    echo ""
+    info "Installing Python dependencies..."
+    
+    # Activate virtual environment
     source venv/bin/activate
     
-    info "Installing Python dependencies..."
-    pip install --quiet --upgrade pip
-    pip install --quiet -r requirements.txt
+    # Upgrade pip first
+    pip install --quiet --upgrade pip || {
+        error "Failed to upgrade pip"
+        deactivate
+        pause
+        return 1
+    }
     
-    success "✓ Backend setup complete"
+    # Install dependencies
+    pip install --quiet -r requirements.txt || {
+        error "Failed to install Python dependencies!"
+        error "Check requirements.txt for issues"
+        deactivate
+        pause
+        return 1
+    }
+    
+    # Verify critical packages are installed
+    echo ""
+    info "Verifying critical packages..."
+    
+    if ! pip show uvicorn > /dev/null 2>&1; then
+        error "uvicorn not installed!"
+        warn "Attempting to install uvicorn..."
+        pip install uvicorn || {
+            error "Failed to install uvicorn"
+            deactivate
+            pause
+            return 1
+        }
+    fi
+    
+    if ! pip show fastapi > /dev/null 2>&1; then
+        error "fastapi not installed!"
+        warn "Attempting to install fastapi..."
+        pip install fastapi || {
+            error "Failed to install fastapi"
+            deactivate
+            pause
+            return 1
+        }
+    fi
+    
+    if ! pip show motor > /dev/null 2>&1; then
+        error "motor not installed!"
+        warn "Attempting to install motor..."
+        pip install motor || {
+            error "Failed to install motor"
+            deactivate
+            pause
+            return 1
+        }
+    fi
+    
+    # Check if uvicorn binary exists
+    if [ ! -f "venv/bin/uvicorn" ]; then
+        error "uvicorn binary not found in venv/bin/"
+        error "Something went wrong with the installation"
+        deactivate
+        pause
+        return 1
+    fi
+    
+    success "✓ uvicorn installed at $(pwd)/venv/bin/uvicorn"
+    success "✓ Backend dependencies installed successfully"
+    
+    deactivate
     echo ""
     
     print_separator
