@@ -743,7 +743,36 @@ sudo systemctl enable mongod
 
 ---
 
-#### 4. Frontend node_modules Missing
+#### 4. Node.js Version Too Old
+
+**Problem:** Frontend installation fails with `The engine "node" is incompatible with this module. Expected version ">=20.0.0"`
+
+**Cause:** React Router 7+ requires Node.js 20.x or higher
+
+**Solution:**
+```bash
+# Remove old Node.js
+sudo apt-get remove -y nodejs
+
+# Add NodeSource repository for Node.js 20.x
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# Install Node.js 20.x
+sudo apt-get install -y nodejs
+
+# Verify version (should be v20.x.x)
+node --version
+
+# Install frontend dependencies
+cd /opt/Automated-Arma-Panel-main/frontend
+yarn install
+```
+
+**Note:** Updated installer automatically installs Node.js 20.x for new installations.
+
+---
+
+#### 5. Frontend node_modules Missing
 
 **Problem:** Frontend service fails with `CHDIR` error or `node_modules` not found
 
