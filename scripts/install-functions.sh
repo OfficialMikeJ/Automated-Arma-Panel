@@ -461,6 +461,73 @@ install_native_panel() {
     # Guided configuration
     guided_configuration
     
+    print_separator
+    echo ""
+    
+    # Final verification
+    log "Step 6: Final Verification"
+    echo ""
+    
+    info "Verifying installation..."
+    echo ""
+    
+    local all_good=true
+    
+    # Check backend venv
+    if [ -f "$BACKEND_DIR/venv/bin/uvicorn" ]; then
+        success "✓ Backend virtual environment with uvicorn"
+    else
+        error "✗ Backend uvicorn not found"
+        all_good=false
+    fi
+    
+    # Check backend dependencies
+    if [ -f "$BACKEND_DIR/venv/bin/python" ]; then
+        cd "$BACKEND_DIR"
+        source venv/bin/activate
+        if pip show fastapi motor pymongo > /dev/null 2>&1; then
+            success "✓ Backend critical dependencies installed"
+        else
+            warn "✗ Some backend dependencies may be missing"
+            all_good=false
+        fi
+        deactivate
+    fi
+    
+    # Check frontend
+    if [ -d "$FRONTEND_DIR/node_modules/react" ] && [ -d "$FRONTEND_DIR/node_modules/react-router-dom" ]; then
+        success "✓ Frontend dependencies installed"
+    else
+        error "✗ Frontend dependencies incomplete"
+        all_good=false
+    fi
+    
+    # Check MongoDB
+    if systemctl is-active --quiet mongod || systemctl is-active --quiet mongodb; then
+        success "✓ MongoDB is running"
+    else
+        warn "✗ MongoDB is not running"
+        info "You may need to start it: sudo systemctl start mongod"
+        all_good=false
+    fi
+    
+    echo ""
+    
+    if [ "$all_good" = true ]; then
+        success "✓ All verification checks passed!"
+    else
+        warn "⚠ Some verification checks failed"
+        warn "The panel may not work correctly"
+        echo ""
+        read -p "Do you want to continue anyway? (y/N): " -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            error "Installation verification failed"
+            pause
+            return 1
+        fi
+    fi
+    
     PANEL_INSTALLED=true
     
     echo ""
