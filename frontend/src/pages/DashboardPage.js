@@ -29,6 +29,7 @@ export default function DashboardPage({ onLogout }) {
   const [showSubAdminManagement, setShowSubAdminManagement] = useState(false);
   const [showResourceManagement, setShowResourceManagement] = useState(false);
   const [selectedServerForResources, setSelectedServerForResources] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const username = localStorage.getItem("username");
 
   const getAuthHeader = () => ({
