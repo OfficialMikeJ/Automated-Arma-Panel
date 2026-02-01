@@ -5,12 +5,12 @@ Wants=tactical-backend.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=/app/frontend
 
 # Environment
-Environment="NODE_ENV=production"
+Environment="HOST=0.0.0.0"
 Environment="PORT=3000"
 
 # Start command
@@ -24,10 +24,6 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=tactical-frontend
-
-# Security settings
-NoNewPrivileges=true
-PrivateTmp=true
 
 # Resource limits
 LimitNOFILE=65536
