@@ -34,8 +34,10 @@ Choose the best installation method for your needs.
 
 ```bash
 cd /app/scripts
-./install.sh
+sudo bash ./install.sh
 ```
+
+**Important:** Always use `sudo bash ./install.sh` to ensure proper permissions. Using just `./install.sh` will not work.
 
 The installer will:
 - ✅ Auto-detect if Python 3 or Node.js are missing
