@@ -77,16 +77,23 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ## Installation
 
-### ⚠️ Ubuntu Server 24.04 LTS - Fix Permissions First
+### ⚠️ Ubuntu Server 24.04 LTS - Important Installation Note
 
-If you get "Permission denied" errors on Ubuntu Server, run this first:
+**Always use `sudo bash` to run the installer:**
 
 ```bash
 cd /app/scripts
-sudo ./fix-permissions.sh
+sudo bash ./install.sh
 ```
 
-This will fix ownership and make all scripts executable.
+**Why?** The installer needs sudo privileges to install dependencies and configure the system. Using `./install.sh` alone may result in "Permission denied" errors.
+
+If you still encounter permission issues, run the fix script first:
+
+```bash
+cd /app/scripts
+sudo bash ./fix-permissions.sh
+```
 
 ---
 
@@ -96,7 +103,7 @@ The easiest way to install with guided setup:
 
 ```bash
 cd /app/scripts
-./install.sh
+sudo bash ./install.sh
 ```
 
 **What happens:** The installer will auto-detect if Python 3 or Node.js are missing and offer to install them for you!
@@ -123,7 +130,7 @@ For experienced users who want one-command setup:
 
 ```bash
 cd /app/scripts
-./install.sh --auto
+sudo bash ./install.sh --auto
 ```
 
 The script will:
