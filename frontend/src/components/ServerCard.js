@@ -1,7 +1,7 @@
 import { Play, Square, RotateCw, Trash2, Settings, Package, FileText } from "lucide-react";
 import { useState } from "react";
 
-export default function ServerCard({ server, onAction, onDelete, onOpenConfig, onOpenMods, onOpenLogs }) {
+export default function ServerCard({ server, onAction, onDelete, onOpenConfig, onOpenMods, onOpenLogs, onOpenResources }) {
   const getStatusColor = (status) => {
     switch (status) {
       case "online":
