@@ -199,7 +199,21 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
             </p>
           </div>
         </div>
+
+        {/* Updates & Fixes Button */}
+        <div className="mt-4">
+          <button
+            onClick={() => setShowUpdates(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground hover:text-primary transition-colors font-mono text-xs uppercase tracking-wider"
+          >
+            <Info size={14} />
+            Updates & Fixes
+          </button>
+        </div>
       </div>
+
+      {/* Updates Modal */}
+      {showUpdates && <UpdatesModal onClose={() => setShowUpdates(false)} />}
     </div>
   );
 }
