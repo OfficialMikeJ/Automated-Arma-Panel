@@ -1,4 +1,4 @@
-import { Play, Square, RotateCw, Trash2, Settings, Package, FileText } from "lucide-react";
+import { Play, Square, RotateCw, Trash2, Settings, Package, FileText, Cpu } from "lucide-react";
 import { useState } from "react";
 
 export default function ServerCard({ server, onAction, onDelete, onOpenConfig, onOpenMods, onOpenLogs, onOpenResources }) {
@@ -122,11 +122,11 @@ export default function ServerCard({ server, onAction, onDelete, onOpenConfig, o
           </div>
           
           {/* Additional Actions */}
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               data-testid={`config-button-${server.id}`}
               onClick={() => onOpenConfig(server.id)}
-              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              className="bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
               aria-label="Server configuration"
             >
               <Settings size={14} />
@@ -135,7 +135,7 @@ export default function ServerCard({ server, onAction, onDelete, onOpenConfig, o
             <button
               data-testid={`mods-button-${server.id}`}
               onClick={() => onOpenMods(server.id)}
-              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              className="bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
               aria-label="Manage mods"
             >
               <Package size={14} />
@@ -144,11 +144,20 @@ export default function ServerCard({ server, onAction, onDelete, onOpenConfig, o
             <button
               data-testid={`logs-button-${server.id}`}
               onClick={() => onOpenLogs(server.id)}
-              className="flex-1 bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              className="bg-secondary/50 hover:bg-secondary/70 text-secondary-foreground font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
               aria-label="View logs"
             >
               <FileText size={14} />
               <span>Logs</span>
+            </button>
+            <button
+              data-testid={`resources-button-${server.id}`}
+              onClick={() => onOpenResources(server)}
+              className="bg-primary/20 hover:bg-primary/30 text-primary font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 h-9 flex items-center justify-center gap-2 text-xs"
+              aria-label="Resource management"
+            >
+              <Cpu size={14} />
+              <span>Resources</span>
             </button>
           </div>
         </div>
