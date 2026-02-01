@@ -20,7 +20,15 @@ sudo apt-get update
 # Then re-run installer - it will handle MongoDB correctly
 ```
 
-### 4️⃣ Frontend Dependencies Missing
+### 4️⃣ Node.js Version Too Old (Need 20.x)
+```bash
+sudo apt-get remove -y nodejs
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node --version  # Verify it's 20.x
+```
+
+### 5️⃣ Frontend Dependencies Missing
 ```bash
 cd /opt/Automated-Arma-Panel-main/frontend
 yarn install
