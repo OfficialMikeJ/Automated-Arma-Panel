@@ -376,10 +376,83 @@ install_native_panel() {
     
     cd "$FRONTEND_DIR"
     
-    info "Installing Node.js dependencies..."
-    yarn install --silent
+    # Check Node.js version
+    NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 20 ]; then
+        error "Node.js version $NODE_VERSION is too old!"
+        error "React Router 7+ requires Node.js 20.x or higher"
+        echo ""
+        read -p "Would you like to upgrade to Node.js 20.x now? (Y/n): " -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            info "Upgrading Node.js to 20.x..."
+            sudo apt-get remove -y nodejs
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            
+            # Verify upgrade
+            NEW_NODE_VERSION=$(node --version)
+            success "✓ Node.js upgraded to $NEW_NODE_VERSION"
+        else
+            error "Cannot continue with Node.js $NODE_VERSION"
+            error "Please upgrade Node.js manually and re-run the installer"
+            pause
+            return 1
+        fi
+    else
+        success "✓ Node.js version $(node --version) is compatible"
+    fi
     
-    success "✓ Frontend setup complete"
+    echo ""
+    info "Installing Node.js dependencies (this may take 2-3 minutes)..."
+    
+    # Remove node_modules if corrupted
+    if [ -d "node_modules" ] && [ ! -f "node_modules/.yarn-integrity" ]; then
+        warn "node_modules appears corrupted, removing..."
+        rm -rf node_modules
+    fi
+    
+    # Install dependencies
+    yarn install || {
+        error "Failed to install frontend dependencies!"
+        error "This could be due to:"
+        error "  1. Network connectivity issues"
+        error "  2. Incompatible Node.js version"
+        error "  3. Corrupted package.json"
+        echo ""
+        read -p "Would you like to try again with verbose output? (y/N): " -r
+        echo ""
+        
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            yarn install --verbose || {
+                error "Installation failed again"
+                pause
+                return 1
+            }
+        else
+            pause
+            return 1
+        fi
+    }
+    
+    # Verify critical packages
+    echo ""
+    info "Verifying critical packages..."
+    
+    if [ ! -d "node_modules/react" ]; then
+        error "React not installed!"
+        pause
+        return 1
+    fi
+    
+    if [ ! -d "node_modules/react-router-dom" ]; then
+        error "react-router-dom not installed!"
+        pause
+        return 1
+    fi
+    
+    success "✓ Frontend dependencies installed successfully"
     echo ""
     
     print_separator
