@@ -904,7 +904,7 @@ sudo systemctl status tactical-frontend
   sudo systemctl status tactical-frontend
   ```
 
-If installation completed but services still fail, see issue #5 above.
+If installation completed but services still fail, see issue #6 above.
 
 ---
 
