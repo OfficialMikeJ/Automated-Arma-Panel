@@ -159,15 +159,51 @@ install_native_panel() {
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             if [ -f /etc/debian_version ]; then
                 info "Installing MongoDB on Debian/Ubuntu..."
-                wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
-                echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+                
+                # Get Ubuntu version
+                UBUNTU_VERSION=$(lsb_release -cs)
+                
+                # Install gnupg if not present
+                sudo apt-get install -y gnupg curl
+                
+                # Add MongoDB GPG key using the new method
+                curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+                    sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+                
+                # For Ubuntu 24.04 (noble), use jammy repository as noble isn't available yet
+                if [ "$UBUNTU_VERSION" = "noble" ]; then
+                    info "Ubuntu 24.04 detected, using jammy repository..."
+                    UBUNTU_VERSION="jammy"
+                fi
+                
+                # Add MongoDB repository with signed-by option
+                echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu $UBUNTU_VERSION/mongodb-org/7.0 multiverse" | \
+                    sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+                
+                # Update and install
                 sudo apt-get update
-                sudo apt-get install -y mongodb-org || sudo apt-get install -y mongodb
+                sudo apt-get install -y mongodb-org || {
+                    warn "MongoDB repository install failed, trying community version..."
+                    sudo apt-get install -y mongodb || {
+                        error "Failed to install MongoDB. Please install manually."
+                        return 1
+                    }
+                }
                 
-                sudo systemctl start mongod || sudo systemctl start mongodb
-                sudo systemctl enable mongod || sudo systemctl enable mongodb
+                # Start and enable MongoDB
+                sudo systemctl daemon-reload
+                sudo systemctl start mongod 2>/dev/null || sudo systemctl start mongodb 2>/dev/null
+                sudo systemctl enable mongod 2>/dev/null || sudo systemctl enable mongodb 2>/dev/null
                 
-                success "✓ MongoDB installed and started"
+                # Wait a moment for MongoDB to start
+                sleep 2
+                
+                # Check if MongoDB is running
+                if sudo systemctl is-active --quiet mongod || sudo systemctl is-active --quiet mongodb; then
+                    success "✓ MongoDB installed and started"
+                else
+                    warn "MongoDB installed but may not be running. Check: sudo systemctl status mongod"
+                fi
             else
                 warn "Please install MongoDB manually for your distribution"
             fi
