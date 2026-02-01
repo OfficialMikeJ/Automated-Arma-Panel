@@ -515,7 +515,8 @@ async def reset_password(reset_data: PasswordResetRequest):
     # Find user
     user = await db.users.find_one({"username": reset_data.username}, {"_id": 0})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Don't reveal if user exists for security reasons
+        raise HTTPException(status_code=400, detail="Invalid username or security answers")
     
     # Check if user has security questions
     if not user.get("security_questions"):
@@ -530,14 +531,26 @@ async def reset_password(reset_data: PasswordResetRequest):
         ("question4", reset_data.answer4)
     ]
     
+    all_correct = True
     for question_key, provided_answer in answers_to_verify:
         stored_hash = security_questions.get(question_key)
-        if not stored_hash or not verify_password(provided_answer.lower().strip(), stored_hash):
-            raise HTTPException(status_code=401, detail="Security answers do not match")
+        if not stored_hash:
+            continue  # Skip if question not set
+        if not verify_password(provided_answer.lower().strip(), stored_hash):
+            all_correct = False
+            break
+    
+    if not all_correct:
+        raise HTTPException(status_code=400, detail="Invalid username or security answers")
     
     # All answers correct, update password
     new_hashed_password = hash_password(reset_data.new_password)
     await db.users.update_one(
+        {"username": reset_data.username},
+        {"$set": {"hashed_password": new_hashed_password}}
+    )
+    
+    return {"message": "Password reset successfully"}
         {"id": user["id"]},
         {"$set": {"hashed_password": new_hashed_password}}
     )
