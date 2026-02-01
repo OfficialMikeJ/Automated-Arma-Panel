@@ -348,9 +348,6 @@ async def check_server_permission(
     
     return False
 
-    except jwt.JWTError:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
-
 # Authentication routes
 @api_router.get("/auth/check-first-run")
 async def check_first_run():
