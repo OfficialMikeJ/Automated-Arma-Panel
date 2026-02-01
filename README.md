@@ -77,6 +77,28 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 
 ## Installation
 
+### 🛠️ Automated Diagnostic & Repair Tool (NEW!)
+
+If you encounter any installation issues, use our automated diagnostic tool:
+
+```bash
+cd /app/scripts
+sudo bash ./diagnose-and-fix.sh
+```
+
+This tool will:
+- Check all installation requirements
+- Identify missing or corrupted components  
+- Offer to fix issues automatically with yes/no prompts
+- Verify the installation is complete and healthy
+
+**Run this tool:**
+- After installation if something doesn't work
+- Before reporting issues
+- Anytime you want to verify the installation
+
+---
+
 ### ⚠️ Ubuntu Server 24.04 LTS - Important Installation Note
 
 **Always use `sudo bash` to run the installer:**
