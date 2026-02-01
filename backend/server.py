@@ -1552,7 +1552,7 @@ async def global_exception_handler(request, exc):
         content={"detail": "Internal server error"}
     )
 
-@app.exception_handler(jwt.JWTError)
+@app.exception_handler(jwt.InvalidTokenError)
 async def jwt_exception_handler(request, exc):
     """Handle JWT errors consistently"""
     logger.warning(f"JWT error: {exc}")
