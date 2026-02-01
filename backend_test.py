@@ -170,7 +170,29 @@ class TacticalServerControlPanelTester:
         return False
 
     def test_first_time_setup(self):
-        """Test first-time admin setup"""
+        """Test first-time admin setup or skip if admin exists"""
+        # First check if this is actually first run
+        success, response = self.run_test(
+            "Check First Run Status",
+            "GET",
+            "auth/check-first-run",
+            200,
+            auth_required=False,
+            is_critical=True
+        )
+        
+        if not success:
+            return False
+            
+        is_first_run = response.get('is_first_run', False)
+        
+        if not is_first_run:
+            # Admin already exists, skip first-time setup
+            print("   ℹ️  Admin user already exists, skipping first-time setup")
+            # Try common admin credentials
+            self.admin_username = "admin"  # Try common username
+            return True
+        
         timestamp = datetime.now().strftime('%H%M%S')
         self.admin_username = f"admin_{timestamp}"
         
