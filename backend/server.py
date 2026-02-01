@@ -551,11 +551,6 @@ async def reset_password(reset_data: PasswordResetRequest):
     )
     
     return {"message": "Password reset successfully"}
-        {"id": user["id"]},
-        {"$set": {"hashed_password": new_hashed_password}}
-    )
-    
-    return {"message": "Password reset successfully"}
 
 @api_router.get("/auth/security-questions/{username}")
 async def get_security_questions(username: str):
