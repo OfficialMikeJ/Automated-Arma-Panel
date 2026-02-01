@@ -19,7 +19,7 @@ export default function ResourceManagementModal({ server, onClose, onUpdate }) {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
+      await axios.patch(
         `${API}/servers/${server.id}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
