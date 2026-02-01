@@ -789,7 +789,7 @@ yarn install
 
 ---
 
-#### 5. Systemd Services Failing - Wrong Paths
+#### 6. Systemd Services Failing - Wrong Paths
 
 **Problem:** Services show `activating (auto-restart)` or fail with path errors
 
