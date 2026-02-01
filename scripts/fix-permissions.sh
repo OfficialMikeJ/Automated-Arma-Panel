@@ -69,6 +69,10 @@ chmod -R 755 "$ROOT_DIR/frontend"
 # Fix permissions on scripts
 chmod -R 755 "$SCRIPT_DIR"
 
+# Ensure all shell scripts are executable
+echo -e "${BLUE}[INFO]${NC} Making all scripts executable..."
+find "$SCRIPT_DIR" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+
 # Fix permissions on logs and backups directories
 echo -e "${YELLOW}[FIX]${NC} Fixing logs and backups..."
 mkdir -p "$ROOT_DIR/logs" "$ROOT_DIR/backups" /tmp/arma_servers
