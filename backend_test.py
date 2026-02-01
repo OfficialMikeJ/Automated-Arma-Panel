@@ -2,16 +2,22 @@ import requests
 import sys
 import json
 from datetime import datetime
+import time
 
-class ArmaServerPanelTester:
+class TacticalServerControlPanelTester:
     def __init__(self, base_url="https://tacticalpanel.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
-        self.token = None
-        self.username = None
+        self.admin_token = None
+        self.sub_admin_token = None
+        self.admin_username = None
+        self.sub_admin_username = None
+        self.sub_admin_id = None
+        self.server_id = None
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
+        self.critical_failures = []
 
     def log_test(self, name, success, details=""):
         """Log test result"""
