@@ -17,11 +17,14 @@ All notable changes to the Tactical Command panel will be documented in this fil
 - Enhanced `README.md` to mention automatic dependency installation
 - Updated `INSTALLATION_GUIDE.md` with detailed auto-install information
 - Updated `INSTALLER_GUIDE.md` with new installation flow examples
+- **IMPORTANT**: All documentation now correctly states to use `sudo bash ./install.sh` instead of just `./install.sh`
+- Updated `fix-permissions.sh` output message to show correct command
 
 ### Fixed
 - Resolved "Node.js is required but not installed" error blocking installation
 - Resolved "Python 3 is required but not installed" error blocking installation
 - User no longer needs to manually install dependencies before running install.sh
+- Clarified that installer must be run with `sudo bash ./install.sh` to avoid permission errors
 
 ## [Previous] - Initial Release
 
