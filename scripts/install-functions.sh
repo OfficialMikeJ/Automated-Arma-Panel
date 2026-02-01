@@ -223,11 +223,24 @@ install_native_panel() {
     log "Step 3: Setting up backend..."
     echo ""
     
+    # Ensure python3-venv is installed
+    if ! dpkg -l | grep -q python3.*-venv; then
+        info "Installing python3-venv package..."
+        if [ -f /etc/debian_version ]; then
+            sudo apt-get install -y python3-venv
+        fi
+    fi
+    
     cd "$BACKEND_DIR"
     
     if [ ! -d "venv" ]; then
         info "Creating Python virtual environment..."
-        python3 -m venv venv
+        python3 -m venv venv || {
+            error "Failed to create virtual environment!"
+            error "Please install python3-venv: sudo apt-get install -y python3-venv"
+            pause
+            return 1
+        }
     fi
     
     source venv/bin/activate
