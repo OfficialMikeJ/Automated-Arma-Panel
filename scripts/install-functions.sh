@@ -95,19 +95,19 @@ install_native_panel() {
             
             # Install Node.js
             if [ "$needs_nodejs" = true ]; then
-                log "Installing Node.js..."
+                log "Installing Node.js 20.x..."
                 echo ""
                 
                 if [ -f /etc/debian_version ]; then
-                    info "Adding NodeSource repository..."
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                    info "Adding NodeSource repository for Node.js 20.x..."
+                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
                     sudo apt-get install -y nodejs
-                    success "✓ Node.js installed"
+                    success "✓ Node.js 20.x installed"
                 elif [ -f /etc/redhat-release ]; then
-                    info "Adding NodeSource repository..."
-                    curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+                    info "Adding NodeSource repository for Node.js 20.x..."
+                    curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
                     sudo yum install -y nodejs
-                    success "✓ Node.js installed"
+                    success "✓ Node.js 20.x installed"
                 else
                     error "Unable to auto-install Node.js on this distribution"
                     error "Please install Node.js 16+ manually from: https://nodejs.org/"
