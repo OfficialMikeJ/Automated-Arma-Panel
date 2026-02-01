@@ -1545,6 +1545,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+
+# Global exception handlers
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """Catch all unhandled exceptions and return proper error response"""
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+
+@app.exception_handler(jwt.JWTError)
+async def jwt_exception_handler(request, exc):
+    """Handle JWT errors consistently"""
+    logger.warning(f"JWT error: {exc}")
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Could not validate credentials"},
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
