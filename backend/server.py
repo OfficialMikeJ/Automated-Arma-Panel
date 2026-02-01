@@ -68,6 +68,10 @@ class User(BaseModel):
     is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
+    # Sub-admin fields
+    is_sub_admin: bool = False
+    parent_admin_id: Optional[str] = None  # ID of the admin who created this sub-admin
+    server_permissions: dict = Field(default_factory=dict)  # {server_id: {view, edit, start, stop, restart}}
 
 class PasswordComplexityConfig(BaseModel):
     min_length: int
