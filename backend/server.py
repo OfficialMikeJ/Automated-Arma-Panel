@@ -1307,6 +1307,164 @@ async def install_steamcmd(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Installation failed: {str(e)}")
 
+
+###############################################################################
+# Sub-Admin Management Routes
+###############################################################################
+
+@api_router.post("/admin/sub-admins")
+async def create_sub_admin(
+    sub_admin: SubAdminCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new sub-admin user (Admin only)"""
+    # Verify current user is admin
+    admin = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not admin or not admin.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can create sub-admins")
+    
+    # Check if username exists
+    existing = await db.users.find_one({"username": sub_admin.username}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    # Create sub-admin user
+    user = User(
+        username=sub_admin.username,
+        hashed_password=hash_password(sub_admin.password),
+        is_sub_admin=True,
+        parent_admin_id=current_user["user_id"],
+        server_permissions=sub_admin.server_permissions
+    )
+    
+    doc = user.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    if doc.get('last_login'):
+        doc['last_login'] = doc['last_login'].isoformat()
+    
+    await db.users.insert_one(doc)
+    
+    return {
+        "message": "Sub-admin created successfully",
+        "username": user.username,
+        "id": user.id
+    }
+
+@api_router.get("/admin/sub-admins")
+async def list_sub_admins(current_user: dict = Depends(get_current_user)):
+    """List all sub-admins created by current admin"""
+    admin = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not admin or not admin.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can view sub-admins")
+    
+    sub_admins = await db.users.find(
+        {"parent_admin_id": current_user["user_id"], "is_sub_admin": True},
+        {"_id": 0, "hashed_password": 0, "totp_secret": 0}
+    ).to_list(1000)
+    
+    return sub_admins
+
+@api_router.get("/admin/sub-admins/{sub_admin_id}")
+async def get_sub_admin(
+    sub_admin_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get specific sub-admin details"""
+    admin = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not admin or not admin.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can view sub-admins")
+    
+    sub_admin = await db.users.find_one(
+        {"id": sub_admin_id, "parent_admin_id": current_user["user_id"]},
+        {"_id": 0, "hashed_password": 0, "totp_secret": 0}
+    )
+    
+    if not sub_admin:
+        raise HTTPException(status_code=404, detail="Sub-admin not found")
+    
+    return sub_admin
+
+@api_router.put("/admin/sub-admins/{sub_admin_id}")
+async def update_sub_admin(
+    sub_admin_id: str,
+    update_data: SubAdminUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update sub-admin permissions or password"""
+    admin = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not admin or not admin.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can update sub-admins")
+    
+    sub_admin = await db.users.find_one(
+        {"id": sub_admin_id, "parent_admin_id": current_user["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not sub_admin:
+        raise HTTPException(status_code=404, detail="Sub-admin not found")
+    
+    update_fields = {}
+    if update_data.password:
+        update_fields["hashed_password"] = hash_password(update_data.password)
+    if update_data.server_permissions is not None:
+        update_fields["server_permissions"] = update_data.server_permissions
+    
+    if update_fields:
+        await db.users.update_one(
+            {"id": sub_admin_id},
+            {"$set": update_fields}
+        )
+    
+    return {"message": "Sub-admin updated successfully"}
+
+@api_router.delete("/admin/sub-admins/{sub_admin_id}")
+async def delete_sub_admin(
+    sub_admin_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a sub-admin user"""
+    admin = await db.users.find_one({"id": current_user["user_id"]}, {"_id": 0})
+    if not admin or not admin.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Only admins can delete sub-admins")
+    
+    result = await db.users.delete_one({
+        "id": sub_admin_id,
+        "parent_admin_id": current_user["user_id"]
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sub-admin not found")
+    
+    return {"message": "Sub-admin deleted successfully"}
+
+###############################################################################
+# Changelog/Updates Route
+###############################################################################
+
+@api_router.get("/changelog")
+async def get_changelog():
+    """Get changelog for display on login page"""
+    changelog_path = Path("/app/CHANGELOG.md")
+    
+    if not changelog_path.exists():
+        return {"content": "# No updates available\n\nCheck back later for updates and fixes."}
+    
+    content = changelog_path.read_text()
+    
+    # Parse and return recent entries (last 50 lines or until [Previous])
+    lines = content.split('\n')
+    recent_lines = []
+    for line in lines:
+        if '[Previous]' in line:
+            break
+        recent_lines.append(line)
+        if len(recent_lines) >= 100:  # Limit to prevent huge responses
+            break
+    
+    return {"content": '\n'.join(recent_lines)}
+
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
