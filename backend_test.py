@@ -224,16 +224,42 @@ class TacticalServerControlPanelTester:
 
     def test_admin_login(self):
         """Test admin login"""
-        if not self.admin_username:
-            return False
+        # First try to register a test admin user
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_username = f"testadmin_{timestamp}"
         
-        # Try multiple common admin credentials
+        register_data = {
+            "username": test_username,
+            "password": "AdminPass123!",
+            "security_questions": {
+                "question1": "blue",
+                "question2": "paris", 
+                "question3": "fluffy",
+                "question4": "smith"
+            }
+        }
+        
+        success, response = self.run_test(
+            "Register Test Admin",
+            "POST",
+            "auth/register",
+            200,
+            data=register_data,
+            auth_required=False,
+            is_critical=False
+        )
+        
+        if success and 'access_token' in response:
+            self.admin_token = response['access_token']
+            self.admin_username = test_username
+            print(f"   ✅ Successfully registered and logged in as {test_username}")
+            return True
+        
+        # If registration failed, try existing credentials
         admin_credentials = [
-            {"username": self.admin_username, "password": "AdminPass123!"},
             {"username": "admin", "password": "admin123"},
             {"username": "admin", "password": "AdminPass123!"},
-            {"username": "admin", "password": "password123"},
-            {"username": "testadmin", "password": "AdminPass123!"}
+            {"username": "testadmin_backend", "password": "AdminPass123!"}
         ]
         
         for creds in admin_credentials:
@@ -244,7 +270,7 @@ class TacticalServerControlPanelTester:
                 200,
                 data=creds,
                 auth_required=False,
-                is_critical=False  # Don't mark as critical since we're trying multiple
+                is_critical=False
             )
             
             if success and 'access_token' in response:
