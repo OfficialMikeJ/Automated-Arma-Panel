@@ -311,7 +311,9 @@ show_main_menu() {
                 configure_firewall
                 ;;
             5)
-                "$SCRIPTS_DIR/update-panel.sh"
+                # Make sure update script is executable
+                chmod +x "$SCRIPTS_DIR/update-panel.sh" 2>/dev/null || true
+                bash "$SCRIPTS_DIR/update-panel.sh"
                 ;;
             6)
                 log "Restarting installation..."
