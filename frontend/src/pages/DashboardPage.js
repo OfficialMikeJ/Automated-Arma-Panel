@@ -66,6 +66,12 @@ export default function DashboardPage({ onLogout }) {
     };
     init();
 
+    // Check if onboarding should be shown (first-time user)
+    const onboardingCompleted = localStorage.getItem("onboarding_completed");
+    if (!onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+
     // Refresh resources every 5 seconds
     const interval = setInterval(fetchResources, 5000);
     return () => clearInterval(interval);
