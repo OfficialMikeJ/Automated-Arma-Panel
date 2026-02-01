@@ -662,20 +662,352 @@ Backend:  http://YOUR_PUBLIC_IP:8001
 
 ## Troubleshooting
 
-### Backend won't start
-- Check if MongoDB is running: `sudo systemctl status mongod`
-- Verify Python virtual environment is activated
-- Check backend/.env configuration
+### Common Installation Issues
 
-### Frontend won't connect
-- Verify REACT_APP_BACKEND_URL in frontend/.env
-- Check if backend is running on correct port
-- Clear browser cache and cookies
+#### 1. WinSCP Permission Denied (Error Code 3)
 
-### Server processes won't start
+**Problem:** Cannot upload/overwrite files in `/opt/` directory
+
+**Solution:**
+```bash
+# Upload files to your home directory first
+# In WinSCP: drag files to /home/yourusername/
+
+# Then in SSH terminal:
+cd /home/yourusername
+sudo mv your-files /opt/Automated-Arma-Panel-main/
+sudo chown -R root:root /opt/Automated-Arma-Panel-main/
+```
+
+**Or temporarily change ownership for WinSCP:**
+```bash
+sudo chown -R yourusername:yourusername /opt/Automated-Arma-Panel-main
+# Upload files via WinSCP
+sudo chown -R root:root /opt/Automated-Arma-Panel-main
+```
+
+---
+
+#### 2. Python Virtual Environment Creation Failed
+
+**Problem:** Installation fails with `venv/bin/activate: No such file or directory`
+
+**Cause:** Missing `python3-venv` package
+
+**Solution:**
+```bash
+# Install the required package
+sudo apt-get update
+sudo apt-get install -y python3-venv
+
+# Verify installation
+dpkg -l | grep python3-venv
+
+# Re-run the installer
+cd /opt/Automated-Arma-Panel-main/scripts
+sudo bash ./install.sh
+```
+
+---
+
+#### 3. MongoDB Repository Error (Ubuntu 24.04)
+
+**Problem:** MongoDB installation fails with repository Release file error
+
+**Cause:** MongoDB 7.0 repository doesn't have Ubuntu 24.04 (Noble) support yet
+
+**Solution:**
+```bash
+# Remove problematic repository
+sudo rm -f /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo apt-get update
+
+# Install using modern method
+sudo apt-get install -y gnupg curl
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+    sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+
+# For Ubuntu 24.04, use jammy repository
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+    sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+# Start MongoDB
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+**Or use the updated installer which includes this fix automatically.**
+
+---
+
+#### 4. Frontend node_modules Missing
+
+**Problem:** Frontend service fails with `CHDIR` error or `node_modules` not found
+
+**Solution:**
+```bash
+# Manually install frontend dependencies
+cd /opt/Automated-Arma-Panel-main/frontend
+yarn install
+
+# If yarn is not installed:
+npm install -g yarn
+yarn install
+```
+
+---
+
+#### 5. Systemd Services Failing - Wrong Paths
+
+**Problem:** Services show `activating (auto-restart)` or fail with path errors
+
+**Cause:** Service files have hardcoded `/app/` paths from development environment
+
+**Solution Method 1 - Use setup script:**
+```bash
+cd /opt/Automated-Arma-Panel-main/scripts
+sudo bash ./setup-systemd.sh
+```
+
+**Solution Method 2 - Manual fix:**
+```bash
+# Stop failing services
+sudo systemctl stop tactical-backend
+sudo systemctl stop tactical-frontend
+
+# Remove old service files
+sudo rm /etc/systemd/system/tactical-backend.service
+sudo rm /etc/systemd/system/tactical-frontend.service
+
+# Create backend service with correct paths
+sudo tee /etc/systemd/system/tactical-backend.service > /dev/null << 'EOF'
+[Unit]
+Description=Tactical Command Backend Service
+After=network.target mongodb.service
+Wants=mongodb.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/Automated-Arma-Panel-main/backend
+
+ExecStart=/opt/Automated-Arma-Panel-main/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001 --workers 1
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-backend
+
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Create frontend service with correct paths
+sudo tee /etc/systemd/system/tactical-frontend.service > /dev/null << 'EOF'
+[Unit]
+Description=Tactical Command Frontend Service
+After=network.target tactical-backend.service
+Wants=tactical-backend.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/Automated-Arma-Panel-main/frontend
+
+Environment="HOST=0.0.0.0"
+Environment="PORT=3000"
+
+ExecStart=/usr/bin/yarn start
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-frontend
+
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload and start services
+sudo systemctl daemon-reload
+sudo systemctl enable tactical-backend
+sudo systemctl enable tactical-frontend
+sudo systemctl start tactical-backend
+sudo systemctl start tactical-frontend
+
+# Verify services are running
+sudo systemctl status tactical-backend
+sudo systemctl status tactical-frontend
+```
+
+---
+
+#### 6. "Panel not fully installed" Warning
+
+**Problem:** Installation shows `[WARNING] ✗ Panel not fully installed` at the beginning
+
+**This is NORMAL!** This warning appears at the START of installation as a status check. The installer checks if backend/venv and frontend/node_modules exist before installation begins.
+
+**What to check:**
+- Did the installation complete successfully at the END?
+- Do these directories exist after installation?
+  ```bash
+  ls -la /opt/Automated-Arma-Panel-main/backend/venv/
+  ls -la /opt/Automated-Arma-Panel-main/frontend/node_modules/ | head
+  ```
+- Are services running?
+  ```bash
+  sudo systemctl status tactical-backend
+  sudo systemctl status tactical-frontend
+  ```
+
+If installation completed but services still fail, see issue #5 above.
+
+---
+
+### Service Issues
+
+#### Backend won't start
+```bash
+# Check MongoDB is running
+sudo systemctl status mongod
+
+# Check backend logs
+sudo journalctl -u tactical-backend -n 50 --no-pager
+
+# Verify environment variables
+cat /opt/Automated-Arma-Panel-main/backend/.env
+
+# Test manually
+cd /opt/Automated-Arma-Panel-main/backend
+source venv/bin/activate
+uvicorn server:app --host 0.0.0.0 --port 8001
+```
+
+#### Frontend won't connect
+```bash
+# Check frontend logs
+sudo journalctl -u tactical-frontend -n 50 --no-pager
+
+# Verify backend URL
+cat /opt/Automated-Arma-Panel-main/frontend/.env
+
+# Check if ports are listening
+sudo ss -tuln | grep -E '3000|8001'
+
+# Test manually
+cd /opt/Automated-Arma-Panel-main/frontend
+yarn start
+```
+
+#### Cannot Access Panel from Browser
+
+**Problem:** Cannot access http://192.168.2.26:3000 from your network
+
+**Solution:**
+```bash
+# Check if services are running
+sudo systemctl status tactical-backend
+sudo systemctl status tactical-frontend
+
+# Check if firewall is blocking
+sudo ufw status
+
+# Allow ports if needed
+sudo ufw allow 3000/tcp
+sudo ufw allow 8001/tcp
+
+# Test locally first
+curl http://localhost:3000
+curl http://localhost:8001/api/auth/check-first-run
+
+# If local works but remote doesn't, check network/router
+```
+
+#### Server processes won't start
 - Check file permissions in /tmp/arma_servers/
 - Verify port is not already in use
 - Check server logs for errors
+- Ensure Arma server files are installed
+
+---
+
+### Complete Fresh Reinstall
+
+If all else fails, start fresh:
+
+```bash
+# Stop services
+sudo systemctl stop tactical-backend
+sudo systemctl stop tactical-frontend
+sudo systemctl disable tactical-backend
+sudo systemctl disable tactical-frontend
+
+# Remove service files
+sudo rm /etc/systemd/system/tactical-backend.service
+sudo rm /etc/systemd/system/tactical-frontend.service
+sudo systemctl daemon-reload
+
+# Remove installation directory
+sudo rm -rf /opt/Automated-Arma-Panel-main
+
+# Re-download/copy files
+# ... copy files to /opt/Automated-Arma-Panel-main ...
+
+# Run installer
+cd /opt/Automated-Arma-Panel-main/scripts
+sudo bash ./install.sh
+```
+
+---
+
+### Getting Help
+
+**Before asking for help, collect this information:**
+
+```bash
+# System info
+uname -a
+lsb_release -a
+
+# Check installations
+python3 --version
+node --version
+mongod --version
+dpkg -l | grep python3-venv
+
+# Check services
+sudo systemctl status tactical-backend
+sudo systemctl status tactical-frontend
+
+# Check logs
+sudo journalctl -u tactical-backend -n 100 --no-pager
+sudo journalctl -u tactical-frontend -n 100 --no-pager
+
+# Check directories
+ls -la /opt/Automated-Arma-Panel-main/backend/venv/
+ls -la /opt/Automated-Arma-Panel-main/frontend/node_modules/ | head
+```
+
+**Useful Documentation:**
+- `COMPLETE_VM_DEPLOYMENT_GUIDE.md` - Comprehensive deployment guide
+- `INSTALLATION_GUIDE.md` - Detailed installation instructions
+- `TROUBLESHOOTING_COMPLETE.md` - Extended troubleshooting
+- `INSTALLATION_FIXES.md` - Recent bug fixes and solutions
 
 ## Performance Optimization
 
