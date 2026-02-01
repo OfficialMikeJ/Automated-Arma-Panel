@@ -815,46 +815,148 @@ class TacticalServerControlPanelTester:
         return cleanup_success
 
     def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 Starting Arma Server Panel Backend Tests")
+        """Run comprehensive backend tests for Tactical Server Control Panel"""
+        print("🚀 Starting Tactical Server Control Panel Backend Tests")
         print(f"   Base URL: {self.base_url}")
-        print("=" * 60)
+        print("=" * 80)
 
-        # Authentication tests
-        if not self.test_user_registration():
-            print("❌ Registration failed, stopping tests")
+        # Phase 1: Basic Authentication & Setup Tests
+        print("\n📋 PHASE 1: Authentication & User Management")
+        print("-" * 50)
+        
+        if not self.test_check_first_run():
+            print("❌ First run check failed, stopping tests")
+            return False
+            
+        if not self.test_password_config():
+            print("❌ Password config failed, stopping tests")
             return False
 
-        if not self.test_user_login():
-            print("❌ Login failed, stopping tests")
+        if not self.test_first_time_setup():
+            print("❌ First-time setup failed, stopping tests")
             return False
 
-        # System tests
-        self.test_system_resources()
+        if not self.test_admin_login():
+            print("❌ Admin login failed, stopping tests")
+            return False
+
+        # TOTP and password reset (non-critical)
+        self.test_totp_setup_flow()
+        self.test_password_reset_flow()
+
+        # Phase 2: Sub-Admin System Tests
+        print("\n👥 PHASE 2: Sub-Admin User System")
+        print("-" * 50)
+        
+        if not self.test_create_sub_admin():
+            print("❌ Sub-admin creation failed")
+            
+        if not self.test_list_sub_admins():
+            print("❌ Sub-admin listing failed")
+            
+        if not self.test_get_sub_admin():
+            print("❌ Sub-admin retrieval failed")
+            
+        if not self.test_update_sub_admin():
+            print("❌ Sub-admin update failed")
+            
+        if not self.test_sub_admin_login():
+            print("❌ Sub-admin login failed")
+
+        # Phase 3: Server Management Tests
+        print("\n🖥️  PHASE 3: Server Management & Resources")
+        print("-" * 50)
+        
+        if not self.test_create_server_with_resources():
+            print("❌ Server creation with resources failed")
+            
+        if not self.test_list_servers():
+            print("❌ Server listing failed")
+            
+        if not self.test_get_server():
+            print("❌ Server retrieval failed")
+            
+        if not self.test_update_server_resources():
+            print("❌ Server resource update failed")
+            
+        if not self.test_server_control_operations():
+            print("❌ Server control operations failed")
+
+        # Server management features (non-critical)
+        self.test_server_config_management()
+        self.test_server_mod_management()
+        self.test_server_logs()
+
+        # Phase 4: System & API Tests
+        print("\n⚙️  PHASE 4: System Resources & APIs")
+        print("-" * 50)
+        
+        if not self.test_system_resources():
+            print("❌ System resources failed")
+            
+        if not self.test_changelog_endpoint():
+            print("❌ Changelog endpoint failed")
+
+        # SteamCMD tests (non-critical)
         self.test_steamcmd_status()
-        
-        # Server management tests
-        self.test_server_crud_operations()
-        
-        # SteamCMD install test
         self.test_steamcmd_install()
 
-        # Print results
-        print("\n" + "=" * 60)
-        print(f"📊 Backend Tests Summary:")
+        # Phase 5: Security Tests
+        print("\n🔒 PHASE 5: Security & Permissions")
+        print("-" * 50)
+        
+        if not self.test_authentication_required():
+            print("❌ Authentication enforcement failed")
+            
+        if not self.test_sub_admin_permissions():
+            print("❌ Sub-admin permission enforcement failed")
+            
+        if not self.test_jwt_token_validation():
+            print("❌ JWT token validation failed")
+
+        # Phase 6: Cleanup
+        print("\n🧹 PHASE 6: Cleanup")
+        print("-" * 50)
+        self.test_cleanup()
+
+        # Print comprehensive results
+        print("\n" + "=" * 80)
+        print(f"📊 COMPREHENSIVE TEST RESULTS:")
         print(f"   Tests Run: {self.tests_run}")
         print(f"   Tests Passed: {self.tests_passed}")
         print(f"   Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
         
-        if self.tests_passed == self.tests_run:
-            print("🎉 All backend tests passed!")
+        if self.critical_failures:
+            print(f"\n🚨 CRITICAL FAILURES ({len(self.critical_failures)}):")
+            for failure in self.critical_failures:
+                print(f"   ❌ {failure}")
+        
+        # Categorize results
+        critical_tests = [r for r in self.test_results if r.get('critical', False)]
+        critical_passed = len([r for r in critical_tests if r['success']])
+        critical_total = len(critical_tests)
+        
+        non_critical_tests = [r for r in self.test_results if not r.get('critical', False)]
+        non_critical_passed = len([r for r in non_critical_tests if r['success']])
+        non_critical_total = len(non_critical_tests)
+        
+        print(f"\n📈 DETAILED BREAKDOWN:")
+        print(f"   Critical Tests: {critical_passed}/{critical_total} passed ({(critical_passed/critical_total*100):.1f}%)")
+        print(f"   Non-Critical Tests: {non_critical_passed}/{non_critical_total} passed ({(non_critical_passed/non_critical_total*100):.1f}%)")
+        
+        if critical_passed == critical_total:
+            print("\n🎉 All critical backend functionality is working!")
+            if self.tests_passed == self.tests_run:
+                print("🌟 Perfect score - All tests passed!")
+            else:
+                print(f"⚠️  Some non-critical features need attention ({self.tests_run - self.tests_passed} minor issues)")
             return True
         else:
-            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
+            print(f"\n💥 CRITICAL ISSUES DETECTED - {critical_total - critical_passed} critical tests failed")
             return False
 
 def main():
-    tester = ArmaServerPanelTester()
+    tester = TacticalServerControlPanelTester()
     success = tester.run_all_tests()
     return 0 if success else 1
 
