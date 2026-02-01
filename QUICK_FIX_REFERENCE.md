@@ -34,7 +34,7 @@ cd /opt/Automated-Arma-Panel-main/frontend
 yarn install
 ```
 
-### 5️⃣ Services Failing - Wrong Paths
+### 6️⃣ Services Failing - Wrong Paths
 ```bash
 cd /opt/Automated-Arma-Panel-main/scripts
 sudo bash ./setup-systemd.sh
