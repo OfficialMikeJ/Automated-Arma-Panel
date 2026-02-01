@@ -104,14 +104,96 @@ set_permissions() {
 install_services() {
     log "Installing systemd services..."
     
-    # Copy service files
-    cp "$SYSTEMD_DIR/tactical-backend.service" /etc/systemd/system/
-    cp "$SYSTEMD_DIR/tactical-frontend.service" /etc/systemd/system/
+    # Determine Python venv path
+    VENV_PATH="/root/.venv"
+    if [ ! -f "$VENV_PATH/bin/python3" ]; then
+        warn "Python venv not found at $VENV_PATH, checking backend/venv..."
+        VENV_PATH="$ROOT_DIR/backend/venv"
+        if [ ! -f "$VENV_PATH/bin/python3" ]; then
+            error "Could not find Python virtual environment!"
+            exit 1
+        fi
+    fi
+    
+    log "Using Python venv: $VENV_PATH"
+    log "Application path: $ROOT_DIR"
+    
+    # Create backend service with dynamic paths
+    cat > /etc/systemd/system/tactical-backend.service << EOF
+[Unit]
+Description=Tactical Command Backend Service
+After=network.target mongodb.service
+Wants=mongodb.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=$ROOT_DIR/backend
+
+# Virtual environment activation and start
+ExecStart=$VENV_PATH/bin/uvicorn server:app --host 0.0.0.0 --port 8001 --workers 1
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-backend
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # Create frontend service with dynamic paths
+    cat > /etc/systemd/system/tactical-frontend.service << EOF
+[Unit]
+Description=Tactical Command Frontend Service
+After=network.target tactical-backend.service
+Wants=tactical-backend.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=$ROOT_DIR/frontend
+
+# Environment
+Environment="HOST=0.0.0.0"
+Environment="PORT=3000"
+
+# Start command
+ExecStart=/usr/bin/yarn start
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tactical-frontend
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
     
     # Reload systemd
     systemctl daemon-reload
     
-    log "✓ Services installed"
+    log "✓ Services installed with paths:"
+    log "  Backend: $ROOT_DIR/backend"
+    log "  Frontend: $ROOT_DIR/frontend"
+    log "  Python: $VENV_PATH/bin/uvicorn"
 }
 
 enable_services() {
