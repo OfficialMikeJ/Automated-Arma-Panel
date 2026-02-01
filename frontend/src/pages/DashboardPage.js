@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { LogOut, Plus, RefreshCw, Server, Activity, HardDrive } from "lucide-react";
+import { LogOut, Plus, RefreshCw, Server, Activity, HardDrive, Shield } from "lucide-react";
 import ServerCard from "../components/ServerCard";
 import SystemResources from "../components/SystemResources";
 import AddServerModal from "../components/AddServerModal";
@@ -9,6 +9,8 @@ import SteamCMDModal from "../components/SteamCMDModal";
 import ConfigEditorModal from "../components/ConfigEditorModal";
 import ModManagerModal from "../components/ModManagerModal";
 import LogViewerModal from "../components/LogViewerModal";
+import SubAdminManagementModal from "../components/SubAdminManagementModal";
+import ResourceManagementModal from "../components/ResourceManagementModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -23,6 +25,9 @@ export default function DashboardPage({ onLogout }) {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showModsModal, setShowModsModal] = useState(false);
   const [showLogsModal, setShowLogsModal] = useState(false);
+  const [showSubAdminManagement, setShowSubAdminManagement] = useState(false);
+  const [showResourceManagement, setShowResourceManagement] = useState(false);
+  const [selectedServerForResources, setSelectedServerForResources] = useState(null);
   const username = localStorage.getItem("username");
 
   const getAuthHeader = () => ({
@@ -130,6 +135,14 @@ export default function DashboardPage({ onLogout }) {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                data-testid="sub-admins-button"
+                onClick={() => setShowSubAdminManagement(true)}
+                className="h-10 px-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-secondary uppercase tracking-wider rounded-sm transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Shield size={16} />
+                <span>Sub-Admins</span>
+              </button>
               <button
                 data-testid="refresh-button"
                 onClick={handleRefresh}
@@ -261,6 +274,10 @@ export default function DashboardPage({ onLogout }) {
                   onOpenLogs={(serverId) => {
                     setSelectedServerId(serverId);
                     setShowLogsModal(true);
+                  }}
+                  onOpenResources={(server) => {
+                    setSelectedServerForResources(server);
+                    setShowResourceManagement(true);
                   }}
                 />
               ))}
