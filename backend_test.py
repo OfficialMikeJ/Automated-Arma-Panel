@@ -37,13 +37,13 @@ class TacticalServerControlPanelTester:
             "critical": is_critical
         })
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, auth_required=True):
+    def run_test(self, name, method, endpoint, expected_status, data=None, auth_required=True, is_critical=False):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
         
-        if auth_required and self.token:
-            headers['Authorization'] = f'Bearer {self.token}'
+        if auth_required and self.admin_token:
+            headers['Authorization'] = f'Bearer {self.admin_token}'
 
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
@@ -55,13 +55,15 @@ class TacticalServerControlPanelTester:
                 response = requests.post(url, json=data, headers=headers, timeout=10)
             elif method == 'PATCH':
                 response = requests.patch(url, json=data, headers=headers, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=headers, timeout=10)
             elif method == 'DELETE':
                 response = requests.delete(url, headers=headers, timeout=10)
 
             success = response.status_code == expected_status
             
             if success:
-                self.log_test(name, True)
+                self.log_test(name, True, is_critical=is_critical)
                 try:
                     return True, response.json()
                 except:
@@ -74,14 +76,63 @@ class TacticalServerControlPanelTester:
                         error_msg += f" - {error_detail}"
                 except:
                     pass
-                self.log_test(name, False, error_msg)
+                self.log_test(name, False, error_msg, is_critical=is_critical)
                 return False, {}
 
         except requests.exceptions.RequestException as e:
-            self.log_test(name, False, f"Request error: {str(e)}")
+            self.log_test(name, False, f"Request error: {str(e)}", is_critical=is_critical)
             return False, {}
         except Exception as e:
-            self.log_test(name, False, f"Unexpected error: {str(e)}")
+            self.log_test(name, False, f"Unexpected error: {str(e)}", is_critical=is_critical)
+            return False, {}
+
+    def run_test_with_token(self, name, method, endpoint, expected_status, data=None, token=None, is_critical=False):
+        """Run a test with specific token"""
+        url = f"{self.api_url}/{endpoint}"
+        headers = {'Content-Type': 'application/json'}
+        
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+
+        print(f"\n🔍 Testing {name}...")
+        print(f"   URL: {url}")
+        
+        try:
+            if method == 'GET':
+                response = requests.get(url, headers=headers, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, json=data, headers=headers, timeout=10)
+            elif method == 'PATCH':
+                response = requests.patch(url, json=data, headers=headers, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=headers, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=headers, timeout=10)
+
+            success = response.status_code == expected_status
+            
+            if success:
+                self.log_test(name, True, is_critical=is_critical)
+                try:
+                    return True, response.json()
+                except:
+                    return True, {}
+            else:
+                error_msg = f"Expected {expected_status}, got {response.status_code}"
+                try:
+                    error_detail = response.json().get('detail', '')
+                    if error_detail:
+                        error_msg += f" - {error_detail}"
+                except:
+                    pass
+                self.log_test(name, False, error_msg, is_critical=is_critical)
+                return False, {}
+
+        except requests.exceptions.RequestException as e:
+            self.log_test(name, False, f"Request error: {str(e)}", is_critical=is_critical)
+            return False, {}
+        except Exception as e:
+            self.log_test(name, False, f"Unexpected error: {str(e)}", is_critical=is_critical)
             return False, {}
 
     def test_user_registration(self):
