@@ -324,6 +324,30 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         return {"user_id": user_id, "username": payload.get("username")}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Session has expired. Please log in again.")
+
+
+async def check_server_permission(
+    server_id: str,
+    user_id: str,
+    required_permission: str  # 'view', 'edit', 'start', 'stop', 'restart'
+) -> bool:
+    """Check if user has permission to perform action on server"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    if not user:
+        return False
+    
+    # Admins have all permissions
+    if user.get("is_admin"):
+        return True
+    
+    # Check sub-admin permissions
+    if user.get("is_sub_admin"):
+        permissions = user.get("server_permissions", {}).get(server_id, {})
+        return permissions.get(required_permission, False)
+    
+    return False
+
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
