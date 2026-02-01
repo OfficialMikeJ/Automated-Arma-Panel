@@ -295,7 +295,7 @@ backend:
 
   - task: "Security - JWT Token Validation"
     implemented: true
-    working: false
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
@@ -304,6 +304,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ JWT token validation returning 520 error instead of 401 for invalid tokens - indicates server error"
+      - working: true
+        agent: "testing"
+        comment: "✅ JWT token validation now working correctly - returns 401 for invalid tokens. Fixed JWT import error (jwt.JWTError -> jwt.InvalidTokenError) and proper exception handling."
 
 frontend:
   - task: "Login Page Features"
