@@ -515,13 +515,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sub-Admin Management Modal"
+    - "Onboarding Modal"
+    - "Sub-Admin Management Modal" 
     - "Resource Management Modal"
-    - "Security - Authentication Enforcement"
-    - "Security - JWT Token Validation"
-  stuck_tasks:
-    - "Security - Authentication Enforcement"
-    - "Security - JWT Token Validation"
+  stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
@@ -534,3 +531,5 @@ agent_communication:
     message: "🎉 SECURITY FIXES VERIFIED! Comprehensive re-testing after fixes shows 87.9% success rate (29/33 tests passed). ✅ ALL CRITICAL SECURITY ISSUES RESOLVED: Authentication returns 401 (not 403), JWT errors return 401 (not 520), Password reset working, WWW-Authenticate headers present. ✅ WORKING: All authentication flows, TOTP setup, server CRUD operations, system resources, changelog API, mod management, configuration management. ❌ EXPECTED FAILURES: Sub-admin system requires admin privileges (test user is regular user), Server control operations require game executables (not available in test environment). Backend is production-ready with 95%+ success rate for available functionality."
   - agent: "testing"
     message: "🎯 FOCUSED NEW FEATURES TESTING COMPLETE! 100% success rate (15/15 tests passed). ✅ AUTHENTICATION FLOW: JWT tokens properly issued and validated for protected endpoints. ✅ SUB-ADMIN MANAGEMENT: All endpoints implemented and properly secured - correctly requires admin privileges (403 responses), API structure verified. ✅ RESOURCE MANAGEMENT: Server creation/updates with cpu_cores, ram_gb, storage_gb, network_speed_mbps working perfectly - all fields persist correctly. ✅ SERVER MANAGEMENT: Full CRUD operations working (create, list, get, update, delete). ✅ SYSTEM RESOURCES: API returns all required fields (CPU, memory, disk usage). ✅ SECURITY: Proper 401 responses for unauthorized/invalid requests. All NEW FEATURES from this session are production-ready and working correctly."
+  - agent: "testing"
+    message: "🚀 NEW FEATURES INTEGRATION TESTING COMPLETE! 100% success rate (18/18 tests passed). ✅ ONBOARDING MODAL: Auto-launches on first login, 7-step guided tour with navigation, progress tracking, Skip Tour, and localStorage completion working perfectly. ✅ SUB-ADMIN MANAGEMENT: Fully integrated with dashboard header button, modal opens correctly, create form with username/password/permissions, proper API integration (shows expected permission errors for regular users). ✅ RESOURCE MANAGEMENT: Fully integrated with server cards, Resources button accessible, modal with CPU/RAM/Storage/Network sliders (1-16 cores, 1-64GB RAM, 10-500GB storage, 10-1000Mbps), real-time updates, and Save Changes functionality working. ✅ REGISTRATION FLOW: Login/Register tabs working, user registration successful, automatic login redirect. ✅ DASHBOARD: Stats cards, system resources charts, refresh functionality all working. All NEW FEATURES are production-ready and fully integrated!"
