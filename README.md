@@ -502,6 +502,46 @@ crontab -e
 0 2 * * 0 /app/scripts/backup.sh weekly-backup >> /app/logs/backup.log 2>&1
 ```
 
+## Accessing the Panel
+
+### Default Network Configuration
+The panel is configured to accept connections from any network interface:
+
+- **Frontend:** `0.0.0.0:3000` (accessible from any IP)
+- **Backend API:** `0.0.0.0:8001` (accessible from any IP)
+
+### Access URLs
+
+**Local Access:**
+```
+Frontend: http://localhost:3000
+Backend:  http://localhost:8001
+```
+
+**LAN Access (from other devices on your network):**
+```
+Frontend: http://YOUR_SERVER_IP:3000
+Backend:  http://YOUR_SERVER_IP:8001
+```
+
+**WAN Access (from internet - requires firewall configuration):**
+```
+Frontend: http://YOUR_PUBLIC_IP:3000
+Backend:  http://YOUR_PUBLIC_IP:8001
+```
+
+**📘 Full guide:** See [NETWORK_CONFIGURATION.md](NETWORK_CONFIGURATION.md) for:
+- Finding your IP addresses
+- Firewall configuration
+- Port forwarding setup
+- SSL/HTTPS configuration
+- Changing default ports
+- Security best practices
+
+---
+
+## Quick Start After Installation
+
 ## Usage Guide
 
 ### 1. First Time Setup
