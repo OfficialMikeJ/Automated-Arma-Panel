@@ -349,6 +349,15 @@ export default function DashboardPage({ onLogout }) {
           }}
         />
       )}
+
+      {showOnboarding && (
+        <OnboardingModal 
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => {
+            toast.success("Welcome to Tactical Command!");
+          }}
+        />
+      )}
     </div>
   );
 }
