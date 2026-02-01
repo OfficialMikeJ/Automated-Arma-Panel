@@ -85,6 +85,16 @@ Run: `sudo /app/scripts/fix-permissions.sh`
 ### "Missing dependencies" error
 The installer should offer to install them. If not, install manually (see above).
 
+## Troubleshooting
+
+### "Permission denied" error
+The installer requires sudo privileges. Always use:
+```bash
+sudo bash /app/scripts/install.sh
+```
+
+**Do NOT use** just `./install.sh` - this will fail.
+
 ### "Command not found: node"
 Make sure Node.js is in your PATH:
 ```bash
