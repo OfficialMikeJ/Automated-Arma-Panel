@@ -885,7 +885,7 @@ sudo systemctl status tactical-frontend
 
 ---
 
-#### 6. "Panel not fully installed" Warning
+#### 7. "Panel not fully installed" Warning
 
 **Problem:** Installation shows `[WARNING] ✗ Panel not fully installed` at the beginning
 
