@@ -8,8 +8,8 @@ This document provides an index of all available documentation for the Tactical 
 
 ## 📚 Documentation Overview
 
-### Total Documents: 13
-### Total Pages: ~150 equivalent
+### Total Documents: 14
+### Total Pages: ~165 equivalent
 ### Coverage: Installation, Configuration, Deployment, Security, Troubleshooting, Maintenance
 
 ---
@@ -48,6 +48,24 @@ This document provides an index of all available documentation for the Tactical 
 - Installation commands for Ubuntu 24.04
 - Dependency auto-installation
 - Firewall setup
+
+**When to use:** Standard Ubuntu deployments
+
+---
+
+### 4. **COMPLETE_VM_DEPLOYMENT_GUIDE.md** 🆕
+**Purpose:** Complete guide for deploying to your own Ubuntu VM
+**Contents:**
+- Understanding Emergent vs Local deployment
+- Step-by-step VM deployment instructions
+- Systemd service setup
+- Comprehensive troubleshooting section
+- Firewall configuration
+- Security considerations
+- File locations and management
+- Common mistakes to avoid
+
+**When to use:** Deploying from Emergent development environment to your own VM (Essential for understanding the difference between cloud dev and local deployment)
 - Access URLs
 - Troubleshooting basics
 
