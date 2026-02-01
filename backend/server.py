@@ -35,7 +35,7 @@ db = client[os.environ['DB_NAME']]
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)  # Don't auto-error, let us handle it
 SECRET_KEY = os.environ.get('SECRET_KEY', 'tactical-server-panel-secret-key-change-in-production')
 ALGORITHM = "HS256"
 
