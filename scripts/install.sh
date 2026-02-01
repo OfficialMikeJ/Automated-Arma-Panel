@@ -286,12 +286,14 @@ show_main_menu() {
         echo -e "  ${GREEN}1${NC}) Install Docker & Docker Compose (Latest Versions)"
         echo -e "  ${GREEN}2${NC}) Install Panel - Native Installation + Guided Setup"
         echo -e "  ${GREEN}3${NC}) Install SSL Certificates (Let's Encrypt)"
-        echo -e "  ${GREEN}4${NC}) Restart Installation (Re-detect System)"
-        echo -e "  ${GREEN}5${NC}) Exit Installer"
+        echo -e "  ${GREEN}4${NC}) Configure Firewall (UFW) - Secure Your Server"
+        echo -e "  ${GREEN}5${NC}) Update Panel - Install Updates & Patches"
+        echo -e "  ${GREEN}6${NC}) Restart Installation (Re-detect System)"
+        echo -e "  ${GREEN}7${NC}) Exit Installer"
         echo ""
         print_separator
         echo ""
-        read -p "Select option [1-5]: " choice
+        read -p "Select option [1-7]: " choice
         
         case $choice in
             1)
@@ -306,12 +308,18 @@ show_main_menu() {
                 install_ssl_certificates
                 ;;
             4)
+                configure_firewall
+                ;;
+            5)
+                "$SCRIPTS_DIR/update-panel.sh"
+                ;;
+            6)
                 log "Restarting installation..."
                 detect_installations
                 success "System re-detected!"
                 pause
                 ;;
-            5)
+            7)
                 echo ""
                 info "Exiting installer..."
                 echo ""
@@ -322,7 +330,7 @@ show_main_menu() {
                 exit 0
                 ;;
             *)
-                error "Invalid option. Please select 1-5."
+                error "Invalid option. Please select 1-7."
                 pause
                 ;;
         esac
