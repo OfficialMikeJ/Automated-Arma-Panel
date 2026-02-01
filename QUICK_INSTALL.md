@@ -2,20 +2,18 @@
 
 ## For Ubuntu Server 24.04 LTS Users
 
-### Step 1: Fix Permissions (If Needed)
-If you get "Permission denied" errors:
+### Step 1: Run the Installer with sudo
+
+**Important:** Always use `sudo bash` to run the installer:
+
 ```bash
 cd /app/scripts
-sudo ./fix-permissions.sh
+sudo bash ./install.sh
 ```
 
-### Step 2: Run the Installer
-```bash
-cd /app/scripts
-./install.sh
-```
+**Do NOT use** `./install.sh` alone - this will fail with permission errors.
 
-### Step 3: What Happens Next?
+### Step 2: What Happens Next?
 
 The installer will:
 
@@ -74,8 +72,10 @@ sudo apt-get install -y nodejs npm
 ### Run Installer
 ```bash
 cd /app/scripts
-./install.sh
+sudo bash ./install.sh
 ```
+
+**Note:** Always use `sudo bash ./install.sh` - using `./install.sh` alone will not work.
 
 ## Troubleshooting
 
