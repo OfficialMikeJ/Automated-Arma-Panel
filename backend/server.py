@@ -314,16 +314,44 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         
         # Check if token is expired
         exp = payload.get("exp")
         if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
-            raise HTTPException(status_code=401, detail="Token has expired")
+            raise HTTPException(
+                status_code=401,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         
         return {"user_id": user_id, "username": payload.get("username")}
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Session has expired. Please log in again.")
+        raise HTTPException(
+            status_code=401,
+            detail="Session has expired. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except HTTPException:
+        raise  # Re-raise HTTPException as-is
+    except Exception as e:
+        # Catch any other exceptions and return 401
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 async def check_server_permission(
