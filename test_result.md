@@ -268,7 +268,7 @@ backend:
 
   - task: "Security - Authentication Enforcement"
     implemented: true
-    working: false
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
@@ -277,6 +277,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ Authentication enforcement returning 403 instead of 401 for unauthenticated requests - indicates middleware issue"
+      - working: true
+        agent: "testing"
+        comment: "✅ Authentication enforcement now working correctly - returns 401 with WWW-Authenticate header for unauthenticated requests. Fixed by setting HTTPBearer(auto_error=False) and proper error handling."
 
   - task: "Security - Sub-Admin Permissions"
     implemented: true
