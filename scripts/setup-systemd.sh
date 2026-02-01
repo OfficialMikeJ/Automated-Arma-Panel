@@ -132,7 +132,7 @@ Group=root
 WorkingDirectory=$ROOT_DIR/backend
 
 # Virtual environment activation and start
-ExecStart=$VENV_PATH/bin/uvicorn server:app --host 0.0.0.0 --port 8001 --workers 1
+ExecStart=$VENV_PATH/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001 --workers 1
 
 # Restart policy
 Restart=always
