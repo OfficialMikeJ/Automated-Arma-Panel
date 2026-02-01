@@ -19,7 +19,7 @@ class TacticalServerControlPanelTester:
         self.test_results = []
         self.critical_failures = []
 
-    def log_test(self, name, success, details=""):
+    def log_test(self, name, success, details="", is_critical=False):
         """Log test result"""
         self.tests_run += 1
         if success:
@@ -27,11 +27,14 @@ class TacticalServerControlPanelTester:
             print(f"✅ {name} - PASSED")
         else:
             print(f"❌ {name} - FAILED: {details}")
+            if is_critical:
+                self.critical_failures.append(f"{name}: {details}")
         
         self.test_results.append({
             "test": name,
             "success": success,
-            "details": details
+            "details": details,
+            "critical": is_critical
         })
 
     def run_test(self, name, method, endpoint, expected_status, data=None, auth_required=True):
