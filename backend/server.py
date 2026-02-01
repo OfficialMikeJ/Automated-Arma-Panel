@@ -227,6 +227,10 @@ class ServerInstanceCreate(BaseModel):
     port: int
     max_players: int
     install_path: str
+    cpu_cores: int = 2
+    ram_gb: int = 4
+    storage_gb: int = 50
+    network_speed_mbps: int = 100
 
 class ServerInstanceUpdate(BaseModel):
     name: Optional[str] = None
@@ -234,6 +238,26 @@ class ServerInstanceUpdate(BaseModel):
     max_players: Optional[int] = None
     current_players: Optional[int] = None
     status: Optional[str] = None
+    cpu_cores: Optional[int] = None
+    ram_gb: Optional[int] = None
+    storage_gb: Optional[int] = None
+    network_speed_mbps: Optional[int] = None
+
+class SubAdminCreate(BaseModel):
+    username: str
+    password: str
+    server_permissions: dict = Field(default_factory=dict)
+
+class SubAdminUpdate(BaseModel):
+    password: Optional[str] = None
+    server_permissions: Optional[dict] = None
+
+class ServerPermissions(BaseModel):
+    view: bool = True
+    edit: bool = False
+    start: bool = False
+    stop: bool = False
+    restart: bool = False
 
 class SystemResources(BaseModel):
     cpu_percent: float
