@@ -44,7 +44,7 @@ A lightweight, fast, and responsive server management panel for Arma Reforger an
 ### For Native Installation
 - **OS**: Linux (Ubuntu 20.04+ recommended)
 - **Python**: 3.11 or higher
-- **Node.js**: 16.x or higher
+- **Node.js**: 20.x or higher (required for React Router 7+)
 - **Yarn**: 1.22.x or higher
 - **MongoDB**: 4.4 or higher
 - **RAM**: Minimum 2GB (4GB+ recommended)
