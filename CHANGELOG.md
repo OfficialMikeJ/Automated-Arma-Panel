@@ -4,7 +4,13 @@ All notable changes to the Tactical Command panel will be documented in this fil
 
 ## [Unreleased]
 
-### Added - Automatic Dependency Installation (Latest)
+### Fixed - Permission Issues (Latest)
+- **Fixed:** update-panel.sh permission denied error when running from installer
+- **Fixed:** Install script now ensures update-panel.sh is executable before running
+- **Fixed:** fix-permissions.sh now explicitly makes all .sh files executable using find command
+- **Improved:** Better error handling for permission issues in installer
+
+### Added - Automatic Dependency Installation
 - **Auto-install Python 3**: The installer now automatically installs Python 3.11+ if missing
 - **Auto-install Node.js**: The installer now automatically installs Node.js 18.x if missing
 - **Distribution Support**: Works on Debian/Ubuntu and RHEL/CentOS systems
