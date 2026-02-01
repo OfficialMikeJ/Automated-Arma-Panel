@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Info } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import UpdatesModal from "@/components/UpdatesModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -14,6 +15,7 @@ export default function LoginPage({ onLogin, onForgotPassword }) {
   const [totpCode, setTotpCode] = useState("");
   const [requiresTOTP, setRequiresTOTP] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showUpdates, setShowUpdates] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
