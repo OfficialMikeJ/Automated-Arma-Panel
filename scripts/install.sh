@@ -6,10 +6,12 @@
 #
 # This script provides a guided installation experience with multiple options.
 #
-# Usage:
-#   ./install.sh           # Interactive menu (default)
-#   ./install.sh --auto    # Quick automatic installation
-#   ./install.sh --help    # Show help
+# IMPORTANT: Always run with sudo bash
+#   sudo bash ./install.sh           # Interactive menu (default)
+#   sudo bash ./install.sh --auto    # Quick automatic installation
+#   sudo bash ./install.sh --help    # Show help
+#
+# Do NOT use just ./install.sh - it will fail with permission errors
 ###############################################################################
 
 set -e
