@@ -211,6 +211,11 @@ class ServerInstance(BaseModel):
     pid: Optional[int] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: str
+    # Resource allocations
+    cpu_cores: int = 2  # Number of CPU cores allocated
+    ram_gb: int = 4  # RAM in GB
+    storage_gb: int = 50  # Storage in GB
+    network_speed_mbps: int = 100  # Network speed in Mbps
 
 class ServerInstanceCreate(BaseModel):
     name: str
