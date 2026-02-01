@@ -586,7 +586,9 @@ show_help() {
   Tactical Command - Interactive Installation Script
 ═══════════════════════════════════════════════════════════════
 
-Usage: $0 [OPTIONS]
+IMPORTANT: Always run with sudo bash
+
+Usage: sudo bash $0 [OPTIONS]
 
 OPTIONS:
     (none)      Interactive menu (default - recommended)
@@ -603,11 +605,11 @@ INTERACTIVE MODE (default):
 
 AUTOMATIC MODE:
     Quick one-command installation:
-    $0 --auto
+    sudo bash $0 --auto
 
 EXAMPLES:
-    $0                  # Interactive menu
-    $0 --auto           # Automatic installation
+    sudo bash $0                  # Interactive menu
+    sudo bash $0 --auto           # Automatic installation
     $0 --help           # Show this help
 
 FEATURES:
