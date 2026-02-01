@@ -50,8 +50,11 @@ Visual guide for the Tactical Command interactive installer.
 ### 1. Interactive Mode (Default)
 
 ```bash
-./install.sh
+cd /app/scripts
+sudo bash ./install.sh
 ```
+
+**Important:** Always use `sudo bash` - using just `./install.sh` will fail with permission errors.
 
 **Features:**
 - Main menu with 5 options
@@ -70,7 +73,8 @@ Visual guide for the Tactical Command interactive installer.
 ### 2. Automatic Mode
 
 ```bash
-./install.sh --auto
+cd /app/scripts
+sudo bash ./install.sh --auto
 ```
 
 **Features:**
