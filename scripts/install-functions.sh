@@ -327,6 +327,112 @@ EOF
 }
 
 ###############################################################################
+# Firewall Configuration (UFW)
+###############################################################################
+
+configure_firewall() {
+    print_header
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${MAGENTA}  OPTION 5: Configure Firewall (UFW)${NC}"
+    echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    warn "Firewall Configuration"
+    echo ""
+    info "This will configure UFW (Uncomplicated Firewall) to allow:"
+    echo "  • SSH (port 22)"
+    echo "  • Panel Frontend (port 3000)"
+    echo "  • Panel Backend API (port 8001)"
+    echo "  • Default Arma Server ports (2001-2100 UDP/TCP)"
+    echo "  • A2S Query ports (2017-2116 UDP)"
+    echo ""
+    
+    read -p "Continue with firewall configuration? (y/N): " -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        info "Firewall configuration cancelled"
+        pause
+        return 0
+    fi
+    
+    # Check if UFW is installed
+    if ! check_command ufw; then
+        info "Installing UFW..."
+        echo ""
+        
+        if [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y ufw
+        elif [ -f /etc/redhat-release ]; then
+            sudo yum install -y ufw
+        else
+            error "Could not install UFW automatically"
+            error "Please install UFW manually for your distribution"
+            pause
+            return 1
+        fi
+    else
+        success "✓ UFW already installed"
+    fi
+    
+    echo ""
+    log "Configuring firewall rules..."
+    echo ""
+    
+    # Set default policies
+    info "Setting default policies..."
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    
+    # Allow SSH
+    info "Allowing SSH (port 22)..."
+    sudo ufw allow 22/tcp comment 'SSH'
+    
+    # Allow panel ports
+    info "Allowing Panel Frontend (port 3000)..."
+    sudo ufw allow 3000/tcp comment 'Tactical Panel Frontend'
+    
+    info "Allowing Panel Backend API (port 8001)..."
+    sudo ufw allow 8001/tcp comment 'Tactical Panel API'
+    
+    # Allow Arma Reforger server ports
+    info "Allowing Arma Server game ports (2001-2100)..."
+    sudo ufw allow 2001:2100/tcp comment 'Arma Server Game Ports'
+    sudo ufw allow 2001:2100/udp comment 'Arma Server Game Ports'
+    
+    info "Allowing A2S query ports (2017-2116)..."
+    sudo ufw allow 2017:2116/udp comment 'Arma Server A2S Query'
+    
+    # IPv6 support
+    info "Enabling IPv6 support..."
+    sudo sed -i 's/IPV6=no/IPV6=yes/' /etc/default/ufw 2>/dev/null || true
+    
+    echo ""
+    read -p "Enable firewall now? (Y/n): " -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        info "Enabling UFW..."
+        echo "y" | sudo ufw enable
+        success "✓ Firewall enabled and configured"
+    else
+        info "Firewall rules configured but not enabled"
+        info "Enable manually with: sudo ufw enable"
+    fi
+    
+    echo ""
+    info "Firewall status:"
+    sudo ufw status verbose
+    
+    echo ""
+    success "Firewall configuration complete!"
+    echo ""
+    
+    pause
+}
+
+###############################################################################
 # SteamCMD Installation
 ###############################################################################
 
